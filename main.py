@@ -34,12 +34,13 @@ def select_contours(img):
     contours_wanted = []
     pixel_mean_array = []
     for contour in contours:
-        contour_3d = np.zeros([contour.shape[0], 3])  # 3rd dimension added for later conversion to patient coord space
-        contour_3d[:, :2] = contour
-        pixel_mean = np.mean(contour, axis=0)
-        if distance.euclidean(pixel_ref, pixel_mean) <= dist_thresh:
-            contours_wanted.append(contour_3d)
-            pixel_mean_array.append(pixel_mean)
+        if len(contour) > 250:
+            contour_3d = np.zeros([contour.shape[0], 3])  # 3rd dimension added for later conversion to patient coord space
+            contour_3d[:, :2] = contour
+            pixel_mean = np.mean(contour, axis=0)
+            if distance.euclidean(pixel_ref, pixel_mean) <= dist_thresh:
+                contours_wanted.append(contour_3d)
+                pixel_mean_array.append(pixel_mean)
     print("Set " + str(len(contours_wanted)) + " contours of interest")
     return contours_wanted, pixel_mean_array
 
@@ -65,7 +66,7 @@ def contours_to_patient_coord_sys_and_points_to_skull_axial_axis(datasets, serie
     mean_points_real = [0, 0, 0]  # to storage points on the skull axis line (healthy slices)
     contours_list = [None] * series_arr.shape[2]  # list of all contours of all slices
     contours_mean_point_list = [None] * series_arr.shape[2]  # list of all mean points of contours of interest
-    rotation_info_list = []  # to storage rotation info found by the icp
+
     # Converts all contours for patient coordinate space based on DICOM tag information
     for i in range(series_arr.shape[2]):
         img = series_arr[:, :, i]
@@ -76,7 +77,7 @@ def contours_to_patient_coord_sys_and_points_to_skull_axial_axis(datasets, serie
         iop1 = np.array(img_orient_pat[0:3])
         iop2 = np.array(img_orient_pat[3:6])
         # Finding contours
-        [cw, pma] = select_contours(img)
+        [cw, pma] = select_contours(img)  # returns contours_wanted and pixel_mean_array
         # Setting which one is the internal / external contour (internal=[0], external=[1]) when needed
         if len(pma) == 2:
             contour_0_len = len(cw[0])
@@ -91,7 +92,7 @@ def contours_to_patient_coord_sys_and_points_to_skull_axial_axis(datasets, serie
                              + iop1 * pixel_spacing[1] * contour[k][0] \
                              + iop2 * pixel_spacing[0] * contour[k][1]
         contours_list[i] = cw_real
-        # Collecting points to skull axial axis and lateral symmetry calculation
+        # Collecting points to skull axial axis and lateral inversion calculation
         if len(pma) == 2:  # healthy skull slice has outside and inside contours (pixel_mean_array has 2 points)
             # uses the mean point of the external contour (contours are approx. concentric)
             pixel_mean_real = img_position_pat \
@@ -99,12 +100,8 @@ def contours_to_patient_coord_sys_and_points_to_skull_axial_axis(datasets, serie
                               + iop2 * pixel_spacing[0] * pma[1][1]
             contours_mean_point_list[i] = pixel_mean_real
             mean_points_real = np.vstack([mean_points_real, pixel_mean_real])
-            # Lateral symmetry
-            external_contour_mirrored = mirror_contour_point(cw_real[1][:, 0:2], pixel_mean_real[0:2])
-            T = icp_wrap(cw_real[1][:, 0:2], external_contour_mirrored, debug=True)
-            rotation_info_list.append(T)
 
-    return contours_list, mean_points_real, contours_mean_point_list, rotation_info_list
+    return contours_list, mean_points_real, contours_mean_point_list
 
 
 def calculate_line_from_points(mpr):
@@ -142,11 +139,10 @@ def main():
     # datasets = load_dicom_folder(r"C:\Users\Escritorio\Dropbox\USP\Projeto Mariana\TestSeries\daniel\OSSOCopy")
     # datasets = load_dicom_folder(r"C:\Users\Escritorio\Dropbox\USP\Projeto Mariana\TestSeries\JLL")
     datasets = load_dicom_folder(r"C:\Users\Escritorio\Dropbox\USP\Projeto Mariana\TestSeries\nic")  # Nicenaldo
-    # datasets = load_dicom_folder(r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\nic")
     # datasets = load_dicom_folder(r"C:\Users\Escritorio\Dropbox\USP\Projeto Mariana\TestSeries\D10A2878") #Darci
     series_arr, _ = dicom_datasets_to_numpy(datasets)
 
-    contours_list, mean_points_real, contours_mean_point_list, rotation_info_list = \
+    contours_list, mean_points_real, contours_mean_point_list = \
         contours_to_patient_coord_sys_and_points_to_skull_axial_axis(datasets, series_arr)
     # np.savetxt("cont40.txt", contours_list[40][0][:, :2], delimiter=' ', newline='\n')
 
@@ -165,31 +161,20 @@ def main():
 
     # Plots in blue central contour points of healthy slices (ref points for axial axis), plots in red central contour
     # points calculated for bone missing slices, plots all contours from contours_list
-    # fig = plt.figure()
-    # ax = Axes3D(fig)
-    # ax.scatter(mpr[:, 0], mpr[:, 1], mpr[:, 2])
-    # ax.scatter(mprg[:, 0], mprg[:, 1], mprg[:, 2], c='red')
-    # for j in range(len(contours_list)):
-    #     for contour in contours_list[j]:
-    #         ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], linewidth=1)
-    # ax.set_xlim3d(-110, 110)
-    # ax.set_ylim3d(-10, 210)
-    # ax.set_zlim3d(90, 310)
-    # plt.axis('scaled')
-    # p1 = point_on_line(mean, direction, 160)  # reference point for line plot
-    # p2 = point_on_line(mean, direction, 240)  # reference point for line plot
-    # plt.plot([p1[0], p2[0]], [p1[1], p2[1]], [p1[2], p2[2]])  # format: [x1, x2] [y1, y2] [z1, z2]
-    # plt.show()
-
-
-def plot_contours(img, contours):
-    # Display the image and plot all contours in a array of contours
-    fig, ax = plt.subplots()
-    contour_img = ax.imshow(img, interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
-    for contour in contours:
-        ax.plot(contour[:, 1], contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
-    ax.axis('image')
-    plt.colorbar(contour_img, ax=ax)
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    ax.scatter(mpr[:, 0], mpr[:, 1], mpr[:, 2])
+    ax.scatter(mprg[:, 0], mprg[:, 1], mprg[:, 2], c='red')
+    for j in range(len(contours_list)):
+        for contour in contours_list[j]:
+            ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], linewidth=1)
+    ax.set_xlim3d(-110, 110)
+    ax.set_ylim3d(-10, 210)
+    ax.set_zlim3d(90, 310)
+    plt.axis('scaled')
+    p1 = point_on_line(mean, direction, 160)  # reference point for line plot
+    p2 = point_on_line(mean, direction, 240)  # reference point for line plot
+    plt.plot([p1[0], p2[0]], [p1[1], p2[1]], [p1[2], p2[2]])  # format: [x1, x2] [y1, y2] [z1, z2]
     plt.show()
 
 
