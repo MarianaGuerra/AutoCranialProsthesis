@@ -4,7 +4,6 @@
 
 import numpy as np
 from open import load_dicom_folder, dicom_datasets_to_numpy
-from icp import icp_wrap
 from skimage import measure
 from scipy.spatial import distance
 import matplotlib.pyplot as plt
@@ -157,8 +156,9 @@ def main():
     contours_mean_point_list = [None] * series_arr.shape[2]  # list of all mean points of contours of interest
     healthy_mean_points = [0, 0, 0]  # to storage points on the skull axis line (healthy slices)
     gap_mean_points = [0, 0, 0]  # to points on the skull axis line (bone missing slices)
+    num_images = series_arr.shape[2]
 
-    for i in range(series_arr.shape[2]):
+    for i in range(num_images):
         img = series_arr[:, :, i]
         [cw, pma] = select_contours(img)  # returns contours_wanted and pixel_mean_array
         # Healthy skull slice has outside and inside contours (pixel_mean_array has 2 points)
@@ -179,14 +179,14 @@ def main():
     direction, mean = calculate_line_from_points(healthy_mean_points)
 
     # Calculates contour mean point for bone missing skull slices using skull axial axis
-    for i in range(series_arr.shape[2]):
+    for i in range(num_images):
         if len(contours_list[i]) == 1:  # bone missing skull slice has only one contour
             mean_point = point_on_line(mean, direction, i)
             gap_mean_points = np.vstack([gap_mean_points, mean_point])
             contours_mean_point_list[i] = mean_point
-            plot_contours(series_arr[:, :, i], contours_list[i], mean_point)
+            # plot_contours(series_arr[:, :, i], contours_list[i], mean_point)
         else:
-            plot_contours(series_arr[:, :, i], contours_list[i], contours_mean_point_list[i])
+            pass  # plot_contours(series_arr[:, :, i], contours_list[i], contours_mean_point_list[i])
     gap_mean_points = gap_mean_points[1:, :]  # first point was 0 for inicialization only
 
     # Plots in blue central contour points of healthy slices (ref points for axial axis), plots in red central contour
@@ -195,16 +195,16 @@ def main():
     ax = Axes3D(fig)
     ax.scatter(healthy_mean_points[:, 0], healthy_mean_points[:, 1], healthy_mean_points[:, 2])
     ax.scatter(gap_mean_points[:, 0], gap_mean_points[:, 1], gap_mean_points[:, 2], c='red')
-    for j in range(len(contours_list)):
+    for j in range(num_images):
         for contour in contours_list[j]:
-            ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], linewidth=1)
-    ax.set_xlim3d(-110, 110)
-    ax.set_ylim3d(-10, 210)
-    ax.set_zlim3d(90, 310)
+            ax.plot(contour[:, 0], contour[:, 1], j, linewidth=1)
+    ax.set_xlim3d(0, 512)
+    ax.set_ylim3d(0, 512)
+    ax.set_zlim3d(0, num_images)
     plt.axis('scaled')
-    p1 = point_on_line(mean, direction, 160)  # reference point for line plot
-    p2 = point_on_line(mean, direction, 240)  # reference point for line plot
-    plt.plot([p1[0], p2[0]], [p1[1], p2[1]], [p1[2], p2[2]])  # format: [x1, x2] [y1, y2] [z1, z2]
+    # p1 = point_on_line(mean, direction, 160)  # reference point for line plot
+    # p2 = point_on_line(mean, direction, 240)  # reference point for line plot
+    # plt.plot([p1[0], p2[0]], [p1[1], p2[1]], [p1[2], p2[2]])  # format: [x1, x2] [y1, y2] [z1, z2]
     plt.show()
 
 
