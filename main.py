@@ -44,66 +44,6 @@ def select_contours(img):
     return contours_wanted, pixel_mean_array
 
 
-def mirror_contour_point(contour, pixel_mean):  # sem uso
-    contour_m = np.array([0, 0])
-    ref_vector = np.array([1, 0])
-    for pi in contour:
-        pr = pixel_mean - (pi - pixel_mean) + 2 * ref_vector * np.dot((pi - pixel_mean), ref_vector)
-        contour_m = np.vstack([contour_m, pr])
-    return contour_m[1:, :]
-
-
-def contours_to_patient_coord_sys(datasets, series_arr):  # reformar para receber contours_list
-    """
-    Transforms the contours to patient coordinate system and stores them in contours_list 
-    :param datasets: loaded DICOM images by load_dicom_folder
-    :param series_arr: 3D ndarray of DICOM image series converted by dicom_datasets_to_numpy
-    :return: contours_list: list of lists of 3D ndarrays (contours) for every slice, on patient coord system
-             mean_points_real: 3D ndarray of mean points of healthy skull slices on patient coord system
-             contours_mean_point_list: list of the mean point of one contour for each slice
-    """
-    mean_points_real = [0, 0, 0]  # to storage points on the skull axis line (healthy slices)
-    contours_list = [None] * series_arr.shape[2]  # list of all contours of all slices
-    contours_mean_point_list = [None] * series_arr.shape[2]  # list of all mean points of contours of interest
-
-    # Converts all contours for patient coordinate space based on DICOM tag information
-    for i in range(series_arr.shape[2]):
-        img = series_arr[:, :, i]
-        # Collecting image information
-        img_orient_pat = [float(x) for x in list(datasets[i].ImageOrientationPatient)]
-        img_position_pat = [float(x) for x in list(datasets[i].ImagePositionPatient)]
-        pixel_spacing = [float(x) for x in list(datasets[i].PixelSpacing)]
-        iop1 = np.array(img_orient_pat[0:3])
-        iop2 = np.array(img_orient_pat[3:6])
-        # Finding contours
-        [cw, pma] = select_contours(img)  # returns contours_wanted and pixel_mean_array
-        plot_contours(img, cw)
-        # Setting which one is the internal / external contour (internal=[0], external=[1]) when needed
-        if len(pma) == 2:
-            contour_0_len = len(cw[0])
-            contour_1_len = len(cw[1])
-            if contour_0_len >= contour_1_len:
-                cw[0], cw[1] = cw[1], cw[0]
-        cw_real = copy.copy(cw)
-        # Coordinate system conversion for all contours
-        for contour in cw_real:
-            for k in range(len(contour)):
-                contour[k] = img_position_pat \
-                             + iop1 * pixel_spacing[1] * contour[k][0] \
-                             + iop2 * pixel_spacing[0] * contour[k][1]
-        contours_list[i] = cw_real
-        # Collecting points to skull axial axis and lateral inversion calculation
-        if len(pma) == 2:  # healthy skull slice has outside and inside contours (pixel_mean_array has 2 points)
-            # uses the mean point of the external contour (contours are approx. concentric)
-            pixel_mean_real = img_position_pat \
-                              + iop1 * pixel_spacing[1] * pma[1][0] \
-                              + iop2 * pixel_spacing[0] * pma[1][1]
-            contours_mean_point_list[i] = pixel_mean_real
-            mean_points_real = np.vstack([mean_points_real, pixel_mean_real])
-
-    return contours_list, mean_points_real, contours_mean_point_list
-
-
 def calculate_line_from_points(mpr):
     """
     Calculates point and direction to define a line on 3D coordinate space based on array of points via single value
@@ -145,6 +85,15 @@ def plot_contours(img, contours, mean_point):
     ax.axis('image')
     plt.colorbar(contour_img, ax=ax)
     plt.show()
+
+
+def invert_contour(contour, pixel_mean):  # sem uso
+    contour_m = np.array([0, 0])
+    ref_vector = np.array([1, 0])
+    for pi in contour:
+        pr = pixel_mean - (pi - pixel_mean) + 2 * ref_vector * np.dot((pi - pixel_mean), ref_vector)
+        contour_m = np.vstack([contour_m, pr])
+    return contour_m[1:, :]
 
 
 def main():
@@ -206,6 +155,48 @@ def main():
     # p2 = point_on_line(mean, direction, 240)  # reference point for line plot
     # plt.plot([p1[0], p2[0]], [p1[1], p2[1]], [p1[2], p2[2]])  # format: [x1, x2] [y1, y2] [z1, z2]
     plt.show()
+
+    # Invert contours
+    
+
+# def contours_to_patient_coord_sys(series_arr, datasets, contours_list, contours_mean_point_list):  # reformar
+#     """
+#     Transforms the contours to patient coordinate system and stores them in contours_list
+#     :param datasets: loaded DICOM images by load_dicom_folder
+#     :param series_arr: 3D ndarray of DICOM image series converted by dicom_datasets_to_numpy
+#     :return: contours_list: list of lists of 3D ndarrays (contours) for every slice, on patient coord system
+#              mean_points_real: 3D ndarray of mean points of healthy skull slices on patient coord system
+#              contours_mean_point_list: list of the mean point of one contour for each slice
+#     """
+#     contours_list_real = [None] * series_arr.shape[2]  # list of all contours of all slices
+#     contours_mean_point_list_real = [None] * series_arr.shape[2]  # list of all mean points of contours of interest
+#
+#     # Converts all contours for patient coordinate space based on DICOM tag information
+#     for i in range(series_arr.shape[2]):
+#         # Collecting image information
+#         img_orient_pat = [float(x) for x in list(datasets[i].ImageOrientationPatient)]
+#         img_position_pat = [float(x) for x in list(datasets[i].ImagePositionPatient)]
+#         pixel_spacing = [float(x) for x in list(datasets[i].PixelSpacing)]
+#         iop1 = np.array(img_orient_pat[0:3])
+#         iop2 = np.array(img_orient_pat[3:6])
+#
+#         # Coordinate system conversion for all contours
+#         for contour in contours_list[i]:
+#             for k in range(len(contour)):
+#                 contour[k] = img_position_pat \
+#                              + iop1 * pixel_spacing[1] * contour[k][0] \
+#                              + iop2 * pixel_spacing[0] * contour[k][1]
+#         contours_list_real[i] = cw_real
+#         # Collecting points to skull axial axis and lateral inversion calculation
+#         if len(pma) == 2:  # healthy skull slice has outside and inside contours (pixel_mean_array has 2 points)
+#             # uses the mean point of the external contour (contours are approx. concentric)
+#             pixel_mean_real = img_position_pat \
+#                               + iop1 * pixel_spacing[1] * pma[1][0] \
+#                               + iop2 * pixel_spacing[0] * pma[1][1]
+#             contours_mean_point_list[i] = pixel_mean_real
+#             mean_points_list_real = np.vstack([mean_points_real, pixel_mean_real])
+#
+#     return contours_list_real, mean_points_list_real
 
 
 if __name__ == '__main__':
