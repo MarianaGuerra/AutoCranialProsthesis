@@ -23,7 +23,7 @@ def select_contours(img):
     :return: list with the wanted contours; list with the central pixel of each wanted contour
     """
     # Find contours at a constant value
-    contours = measure.find_contours(img, 300)
+    contours = measure.find_contours(img, 200)
     # print("Found " + str(len(contours)) + " contour(s)")
     # Select the nearest contours with respect to the center pixel of the image
     width = img.shape[1]  # number of columms
@@ -78,6 +78,7 @@ def contours_to_patient_coord_sys_and_points_to_skull_axial_axis(datasets, serie
         iop2 = np.array(img_orient_pat[3:6])
         # Finding contours
         [cw, pma] = select_contours(img)  # returns contours_wanted and pixel_mean_array
+        plot_contours(img, cw)
         # Setting which one is the internal / external contour (internal=[0], external=[1]) when needed
         if len(pma) == 2:
             contour_0_len = len(cw[0])
@@ -135,10 +136,21 @@ def point_on_line(point, direction, z):
     return np.array([x, y, z])
 
 
+def plot_contours(img, contours):
+    # Display the image and plot all contours in a array of contours
+    fig, ax = plt.subplots()
+    contour_img = ax.imshow(img, interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
+    for contour in contours:
+        ax.plot(contour[:, 1], contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
+    ax.axis('image')
+    plt.colorbar(contour_img, ax=ax)
+    plt.show()
+
+
 def main():
     # datasets = load_dicom_folder(r"C:\Users\Escritorio\Dropbox\USP\Projeto Mariana\TestSeries\daniel\OSSOCopy")
     # datasets = load_dicom_folder(r"C:\Users\Escritorio\Dropbox\USP\Projeto Mariana\TestSeries\JLL")
-    datasets = load_dicom_folder(r"C:\Users\Escritorio\Dropbox\USP\Projeto Mariana\TestSeries\nic")  # Nicenaldo
+    datasets = load_dicom_folder(r"C:\Users\Escritorio\Dropbox\USP\Projeto Mariana\TestSeries\nic2")  # Nicenaldo
     # datasets = load_dicom_folder(r"C:\Users\Escritorio\Dropbox\USP\Projeto Mariana\TestSeries\D10A2878") #Darci
     series_arr, _ = dicom_datasets_to_numpy(datasets)
 
