@@ -8,6 +8,7 @@ from skimage import measure
 from scipy.spatial import distance
 import matplotlib.pyplot as plt
 import copy
+import random
 from mpl_toolkits.mplot3d import Axes3D
 
 
@@ -86,6 +87,25 @@ def invert_point(point, ref_point):
     ref_vector = np.array([1, 0])
     inverted_point = ref_point - (point - ref_point) + 2 * ref_vector * np.dot((point - ref_point), ref_vector)
     return inverted_point
+
+
+def ccw(a, b, c):
+    """
+    Auxiliar function to Intersect
+    """
+    return (c[0] - a[0]) * (b[1] - a[1]) > (b[0] - a[0]) * (c[1] - a[1])
+
+
+def intersect(a, b, c, d):
+    """
+    Checks if two line segments AB and CD intersect 
+    :param a: array, point a on line segment AB
+    :param b: array, point b on line segment AB
+    :param c: array, point c on line segment CD
+    :param d: array, point d on line segment CD
+    :return: true if line segments AB and CD intersect
+    """
+    return ccw(a, c, d) != ccw(b, c, d) and ccw(a, b, c) != ccw(a, b, d)
 
 
 def plot_contours(img, contours, mean_point):
@@ -189,7 +209,25 @@ def main():
             for n in range(contour.shape[0]):
                 contour_2d[n] = invert_point(contour_2d[n], contours_mean_point_list[m])
                 contour[:, :2] = contour_2d
-        plot_inverted_contours(series_arr[:, :, m], inverted_contours_list[m], contours_list[m], contours_mean_point_list[m])
+        # plot_inverted_contours(series_arr[:, :, m], inverted_contours_list[m], contours_list[m], contours_mean_point_list[m])
+
+    # Separate contours in parts: internal, external, gap edges
+    ref_vector = np.array([1, 0])
+    mid_point = contours_mean_point_list[50][0:2]
+    far_point = mid_point + 500*ref_vector
+    test_contour = contours_list[50][0][:, :2]
+    # sample = np.asarray(random.sample(test_contour, int(round(0.5*test_contour.shape[0]))))
+    # plot_contours(series_arr[:, :, 50], [test_contour], mid_point)
+    # Return true if line segments AB and CD intersect
+    print (intersect(mid_point, far_point, test_contour[800], test_contour[801]))
+    fig, ax = plt.subplots()
+    contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
+    ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
+    ax.plot([test_contour[800][1], test_contour[801][1]], [test_contour[800][0], test_contour[801][0]], linewidth=2)
+    ax.plot([mid_point[1], far_point[1]], [mid_point[0], far_point[0]], 'r--')
+    ax.axis('image')
+    plt.colorbar(contour_img, ax=ax)
+    plt.show()
 
 
 # def contours_to_patient_coord_sys(series_arr, datasets, contours_list, contours_mean_point_list):  # reformar
