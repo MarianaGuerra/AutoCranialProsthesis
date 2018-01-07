@@ -94,6 +94,25 @@ def invert_contour_point(pi, pixel_mean):
     return pr
 
 
+def plot_inverted_contours(img, inverted_contours, contours, mean_point):
+    # Display the image and plot all contours in a array of contours
+    fig, ax = plt.subplots()
+    contour_img = ax.imshow(img, interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
+    for inv_contour in inverted_contours:
+        ax.plot(inv_contour[:, 1], inv_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
+    for contour in contours:
+        ax.plot(contour[:, 1], contour[:, 0], 'r--')  # x and y are switched for correct image plot
+        ax.plot(mean_point[1], mean_point[0], 'ro')
+        p1 = mean_point[0:2] + np.multiply(250, [1, 0])  # x and y are switched for correct image plot
+        p2 = mean_point[0:2] - np.multiply(250, [1, 0])  # x and y are switched for correct image plot
+        ax.plot([p1[1], p2[1]], [p1[0], p2[0]], linewidth=2)
+    ax.axis('image')
+    plt.colorbar(contour_img, ax=ax)
+    figmanager = plt.get_current_fig_manager()
+    figmanager.window.showMaximized()
+    plt.show()
+
+
 def main():
     # datasets = load_dicom_folder(r"C:\Users\Escritorio\Dropbox\USP\Projeto Mariana\TestSeries\JLL")
     datasets = load_dicom_folder(r"C:\Users\Escritorio\Dropbox\USP\Projeto Mariana\TestSeries\nic2")  # Nic
@@ -156,14 +175,14 @@ def main():
     # plt.show()
 
     # Invert contours
-    inverted_contours_list = copy.copy(contours_list)
+    inverted_contours_list = copy.deepcopy(contours_list)
     for m in range(num_images):
         for contour in inverted_contours_list[m]:
+            contour_2d = contour[:, :2]
             for n in range(contour.shape[0]):
-                contour_2d = contour[:, :2]
                 contour_2d[n] = invert_contour_point(contour_2d[n], contours_mean_point_list[m])
                 contour[:, :2] = contour_2d
-        plot_contours(series_arr[:, :, m], inverted_contours_list[m], contours_mean_point_list[m])
+        plot_inverted_contours(series_arr[:, :, m], inverted_contours_list[m], contours_list[m], contours_mean_point_list[m])
 
 
 # def contours_to_patient_coord_sys(series_arr, datasets, contours_list, contours_mean_point_list):  # reformar
