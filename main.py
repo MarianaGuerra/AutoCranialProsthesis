@@ -87,13 +87,11 @@ def plot_contours(img, contours, mean_point):
     plt.show()
 
 
-def invert_contour(contour, pixel_mean):  # sem uso
-    contour_m = np.array([0, 0])
+def invert_contour_point(pi, pixel_mean):
+    pixel_mean = pixel_mean[0:2]
     ref_vector = np.array([1, 0])
-    for pi in contour:
-        pr = pixel_mean - (pi - pixel_mean) + 2 * ref_vector * np.dot((pi - pixel_mean), ref_vector)
-        contour_m = np.vstack([contour_m, pr])
-    return contour_m[1:, :]
+    pr = pixel_mean - (pi - pixel_mean) + 2 * ref_vector * np.dot((pi - pixel_mean), ref_vector)
+    return pr
 
 
 def main():
@@ -101,11 +99,11 @@ def main():
     datasets = load_dicom_folder(r"C:\Users\Escritorio\Dropbox\USP\Projeto Mariana\TestSeries\nic2")  # Nic
     # datasets = load_dicom_folder(r"C:\Users\Escritorio\Dropbox\USP\Projeto Mariana\TestSeries\D10A2878") #Darci
     series_arr, _ = dicom_datasets_to_numpy(datasets)
-    contours_list = [None] * series_arr.shape[2]  # list of all contours of all slices
-    contours_mean_point_list = [None] * series_arr.shape[2]  # list of all mean points of contours of interest
+    num_images = series_arr.shape[2]
+    contours_list = [None] * num_images  # list of all contours of all slices
+    contours_mean_point_list = np.zeros((num_images, 3))  # list of all mean points of contours of interest
     healthy_mean_points = [0, 0, 0]  # to storage points on the skull axis line (healthy slices)
     gap_mean_points = [0, 0, 0]  # to points on the skull axis line (bone missing slices)
-    num_images = series_arr.shape[2]
 
     for i in range(num_images):
         img = series_arr[:, :, i]
@@ -118,9 +116,9 @@ def main():
             if contour_0_len >= contour_1_len:
                 cw[0], cw[1] = cw[1], cw[0]
             # Sets the mean point of the external contour (contours are approx. concentric) as mean point
-            contours_mean_point_list[i] = pma[1]
             mean_point = list(pma[1]) + [i]
             healthy_mean_points = np.vstack([healthy_mean_points, mean_point])
+            contours_mean_point_list[i] = mean_point
         contours_list[i] = cw
 
     # Calculates direction and mean point to define skull axial axis
@@ -128,36 +126,45 @@ def main():
     direction, mean = calculate_line_from_points(healthy_mean_points)
 
     # Calculates contour mean point for bone missing skull slices using skull axial axis
-    for i in range(num_images):
-        if len(contours_list[i]) == 1:  # bone missing skull slice has only one contour
-            mean_point = point_on_line(mean, direction, i)
+    for j in range(num_images):
+        if len(contours_list[j]) == 1:  # bone missing skull slice has only one contour
+            mean_point = point_on_line(mean, direction, j)
             gap_mean_points = np.vstack([gap_mean_points, mean_point])
-            contours_mean_point_list[i] = mean_point
-            # plot_contours(series_arr[:, :, i], contours_list[i], mean_point)
+            contours_mean_point_list[j] = mean_point
+            # plot_contours(series_arr[:, :, j], contours_list[j], mean_point)
         else:
-            pass  # plot_contours(series_arr[:, :, i], contours_list[i], contours_mean_point_list[i])
+            pass
+            # plot_contours(series_arr[:, :, j], contours_list[j], contours_mean_point_list[j])
     gap_mean_points = gap_mean_points[1:, :]  # first point was 0 for inicialization only
 
     # Plots in blue central contour points of healthy slices (ref points for axial axis), plots in red central contour
     # points calculated for bone missing slices, plots all contours from contours_list
-    fig = plt.figure()
-    ax = Axes3D(fig)
-    ax.scatter(healthy_mean_points[:, 0], healthy_mean_points[:, 1], healthy_mean_points[:, 2])
-    ax.scatter(gap_mean_points[:, 0], gap_mean_points[:, 1], gap_mean_points[:, 2], c='red')
-    for j in range(num_images):
-        for contour in contours_list[j]:
-            ax.plot(contour[:, 0], contour[:, 1], j, linewidth=1)
-    ax.set_xlim3d(0, 512)
-    ax.set_ylim3d(0, 512)
-    ax.set_zlim3d(0, num_images)
-    plt.axis('scaled')
-    # p1 = point_on_line(mean, direction, 160)  # reference point for line plot
-    # p2 = point_on_line(mean, direction, 240)  # reference point for line plot
-    # plt.plot([p1[0], p2[0]], [p1[1], p2[1]], [p1[2], p2[2]])  # format: [x1, x2] [y1, y2] [z1, z2]
-    plt.show()
+    # fig = plt.figure()
+    # ax = Axes3D(fig)
+    # ax.scatter(healthy_mean_points[:, 0], healthy_mean_points[:, 1], healthy_mean_points[:, 2])
+    # ax.scatter(gap_mean_points[:, 0], gap_mean_points[:, 1], gap_mean_points[:, 2], c='red')
+    # for k in range(num_images):
+    #     for contour in contours_list[k]:
+    #         ax.plot(contour[:, 0], contour[:, 1], k, linewidth=1)
+    # ax.set_xlim3d(0, 512)
+    # ax.set_ylim3d(0, 512)
+    # ax.set_zlim3d(0, num_images)
+    # plt.axis('scaled')
+    # # p1 = point_on_line(mean, direction, 160)  # reference point for line plot
+    # # p2 = point_on_line(mean, direction, 240)  # reference point for line plot
+    # # plt.plot([p1[0], p2[0]], [p1[1], p2[1]], [p1[2], p2[2]])  # format: [x1, x2] [y1, y2] [z1, z2]
+    # plt.show()
 
     # Invert contours
-    
+    inverted_contours_list = copy.copy(contours_list)
+    for m in range(num_images):
+        for contour in inverted_contours_list[m]:
+            for n in range(contour.shape[0]):
+                contour_2d = contour[:, :2]
+                contour_2d[n] = invert_contour_point(contour_2d[n], contours_mean_point_list[m])
+                contour[:, :2] = contour_2d
+        plot_contours(series_arr[:, :, m], inverted_contours_list[m], contours_mean_point_list[m])
+
 
 # def contours_to_patient_coord_sys(series_arr, datasets, contours_list, contours_mean_point_list):  # reformar
 #     """
