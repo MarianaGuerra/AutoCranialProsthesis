@@ -75,6 +75,19 @@ def point_on_line(point, direction, z):
     return np.array([x, y, z])
 
 
+def invert_point(point, ref_point):
+    """
+    Inverts a point with respect to a line formed by a reference vector and a reference point
+    :param point: original/input point
+    :param ref_point: reference point for the line
+    :return: inverted point
+    """
+    ref_point = ref_point[0:2]
+    ref_vector = np.array([1, 0])
+    inverted_point = ref_point - (point - ref_point) + 2 * ref_vector * np.dot((point - ref_point), ref_vector)
+    return inverted_point
+
+
 def plot_contours(img, contours, mean_point):
     # Display the image and plot all contours in a array of contours
     fig, ax = plt.subplots()
@@ -87,24 +100,18 @@ def plot_contours(img, contours, mean_point):
     plt.show()
 
 
-def invert_contour_point(pi, pixel_mean):
-    pixel_mean = pixel_mean[0:2]
-    ref_vector = np.array([1, 0])
-    pr = pixel_mean - (pi - pixel_mean) + 2 * ref_vector * np.dot((pi - pixel_mean), ref_vector)
-    return pr
-
-
 def plot_inverted_contours(img, inverted_contours, contours, mean_point):
     # Display the image and plot all contours in a array of contours
+    # x and y are switched everywhere for correct image plot
     fig, ax = plt.subplots()
     contour_img = ax.imshow(img, interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
     for inv_contour in inverted_contours:
         ax.plot(inv_contour[:, 1], inv_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
     for contour in contours:
-        ax.plot(contour[:, 1], contour[:, 0], 'r--')  # x and y are switched for correct image plot
+        ax.plot(contour[:, 1], contour[:, 0], 'r--')
         ax.plot(mean_point[1], mean_point[0], 'ro')
-        p1 = mean_point[0:2] + np.multiply(250, [1, 0])  # x and y are switched for correct image plot
-        p2 = mean_point[0:2] - np.multiply(250, [1, 0])  # x and y are switched for correct image plot
+        p1 = mean_point[0:2] + np.multiply(250, [1, 0])
+        p2 = mean_point[0:2] - np.multiply(250, [1, 0])
         ax.plot([p1[1], p2[1]], [p1[0], p2[0]], linewidth=2)
     ax.axis('image')
     plt.colorbar(contour_img, ax=ax)
@@ -180,7 +187,7 @@ def main():
         for contour in inverted_contours_list[m]:
             contour_2d = contour[:, :2]
             for n in range(contour.shape[0]):
-                contour_2d[n] = invert_contour_point(contour_2d[n], contours_mean_point_list[m])
+                contour_2d[n] = invert_point(contour_2d[n], contours_mean_point_list[m])
                 contour[:, :2] = contour_2d
         plot_inverted_contours(series_arr[:, :, m], inverted_contours_list[m], contours_list[m], contours_mean_point_list[m])
 
