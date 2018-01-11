@@ -41,7 +41,7 @@ def select_contours(img):
             if distance.euclidean(pixel_ref, pixel_mean) <= dist_thresh:
                 contours_wanted.append(contour_3d)
                 pixel_mean_array.append(pixel_mean)
-    print("Set " + str(len(contours_wanted)) + " contours of interest")
+    print("Set " + str(len(contours_wanted)) + " contour(s)")
     return contours_wanted, pixel_mean_array
 
 
@@ -153,16 +153,23 @@ def main():
 
     for i in range(num_images):
         img = series_arr[:, :, i]
+        print("Image " + str(i))
         [cw, pma] = select_contours(img)  # returns contours_wanted and pixel_mean_array
+        if len(cw) == 0:
+            print("It wasn't possible to set a contour for this slice. \ "
+                  "Please check threshold values in function 'select_contours'")
+            return
         # Healthy skull slice has outside and inside contours (pixel_mean_array has 2 points)
-        # Setting which one is the internal / external contour (internal=[0], external=[1]) when needed
+        # Shorter contour =[0], longuer contour =[1])
         if len(pma) == 2:
             contour_0_len = len(cw[0])
             contour_1_len = len(cw[1])
             if contour_0_len >= contour_1_len:
                 cw[0], cw[1] = cw[1], cw[0]
-            # Sets the mean point of the external contour (contours are approx. concentric) as mean point
-            mean_point = list(pma[1]) + [i]
+                pma[0], pma[1] = pma[1], pma[0]
+            # Sets the mean point of the shorter contour as mean point(contours are approx. concentric and avoids
+            # deviations caused by the points os face bone
+            mean_point = list(pma[0]) + [i]
             healthy_mean_points = np.vstack([healthy_mean_points, mean_point])
             contours_mean_point_list[i] = mean_point
         contours_list[i] = cw
@@ -209,7 +216,8 @@ def main():
             for n in range(contour.shape[0]):
                 contour_2d[n] = invert_point(contour_2d[n], contours_mean_point_list[m])
                 contour[:, :2] = contour_2d
-        # plot_inverted_contours(series_arr[:, :, m], inverted_contours_list[m], contours_list[m], contours_mean_point_list[m])
+        # plot_inverted_contours(series_arr[:, :, m], \
+        #                       inverted_contours_list[m], contours_list[m], contours_mean_point_list[m])
 
     # Determine gap region on contour
     ref_vector = np.array([1, 0])
@@ -221,7 +229,6 @@ def main():
     # plot_contours(series_arr[:, :, 50], [test_contour], mid_point)
     intersected = []
     for p in range(test_contour.shape[0]-1):
-        # print (intersect(mid_point, far_point, test_contour[p], test_contour[p+1]))
         # Return true if line segments AB and CD intersect
         if intersect(mid_point, far_point, test_contour[p], test_contour[p + 1]):
             intersected += [test_contour[p], test_contour[p + 1]]
@@ -229,9 +236,9 @@ def main():
     contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
     ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
     ax.plot([mid_point[1], far_point[1]], [mid_point[0], far_point[0]], 'r--')
-    for q in range(0,
-                   len(intersected), 2):
-        ax.plot([intersected[q][1], intersected[q + 1][1]], [intersected[q][0], intersected[q + 1][0]], linewidth=2)  # format: [x1, x2] [y1, y2]
+    for q in range(0, len(intersected), 2):
+        ax.plot([intersected[q][1], intersected[q + 1][1]], [intersected[q][0], intersected[q + 1][0]], linewidth=2)
+        # format: [x1, x2] [y1, y2]
     ax.axis('image')
     plt.colorbar(contour_img, ax=ax)
     plt.show()
