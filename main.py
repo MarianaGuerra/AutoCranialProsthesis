@@ -211,24 +211,32 @@ def main():
                 contour[:, :2] = contour_2d
         # plot_inverted_contours(series_arr[:, :, m], inverted_contours_list[m], contours_list[m], contours_mean_point_list[m])
 
-    # Separate contours in parts: internal, external, gap edges
+    # Determine gap region on contour
     ref_vector = np.array([1, 0])
+    # fazer um for pelos contornos com falha
     mid_point = contours_mean_point_list[50][0:2]
-    far_point = mid_point + 500*ref_vector
+    far_point = mid_point + 300*ref_vector
     test_contour = contours_list[50][0][:, :2]
     # sample = np.asarray(random.sample(test_contour, int(round(0.5*test_contour.shape[0]))))
     # plot_contours(series_arr[:, :, 50], [test_contour], mid_point)
-    # Return true if line segments AB and CD intersect
-    print (intersect(mid_point, far_point, test_contour[800], test_contour[801]))
+    intersected = []
+    for p in range(test_contour.shape[0]-1):
+        # print (intersect(mid_point, far_point, test_contour[p], test_contour[p+1]))
+        # Return true if line segments AB and CD intersect
+        if intersect(mid_point, far_point, test_contour[p], test_contour[p + 1]):
+            intersected += [test_contour[p], test_contour[p + 1]]
     fig, ax = plt.subplots()
     contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
     ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
-    ax.plot([test_contour[800][1], test_contour[801][1]], [test_contour[800][0], test_contour[801][0]], linewidth=2)
     ax.plot([mid_point[1], far_point[1]], [mid_point[0], far_point[0]], 'r--')
+    for q in range(0,
+                   len(intersected), 2):
+        ax.plot([intersected[q][1], intersected[q + 1][1]], [intersected[q][0], intersected[q + 1][0]], linewidth=2)  # format: [x1, x2] [y1, y2]
     ax.axis('image')
     plt.colorbar(contour_img, ax=ax)
     plt.show()
 
+    # Separate contours in parts: internal, external, gap edges
 
 # def contours_to_patient_coord_sys(series_arr, datasets, contours_list, contours_mean_point_list):  # reformar
 #     """
