@@ -112,6 +112,7 @@ def test_intersection(test_contour, mid_point, ang_min, ang_max, step):
     ref_vector = np.array([1, 0])
     no_intersection = []
     for theta in range(ang_min, ang_max, step):
+        intersected = 0
         print("Theta: " + str(theta))
         theta = np.deg2rad(theta)
         rot_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
@@ -121,9 +122,10 @@ def test_intersection(test_contour, mid_point, ang_min, ang_max, step):
         for p in range(test_contour.shape[0] - 1):
             # Return true if line segments AB and CD intersect
             if intersect(mid_point, far_point, test_contour[p], test_contour[p + 1]):
-                break  # goes back to for loop through angles
-            break
-        no_intersection += [np.round(np.rad2deg(theta))]
+                intersected += 1
+        if intersected == 0:
+            no_intersection += [np.round(np.rad2deg(theta))]
+            print("not intersected")
     return no_intersection
 
 
