@@ -108,6 +108,25 @@ def intersect(a, b, c, d):
     return ccw(a, c, d) != ccw(b, c, d) and ccw(a, b, c) != ccw(a, b, d)
 
 
+def test_intersection(test_contour, mid_point, ang_min, ang_max, step):
+    ref_vector = np.array([1, 0])
+    no_intersection = []
+    for theta in range(ang_min, ang_max, step):
+        print("Theta: " + str(theta))
+        theta = np.deg2rad(theta)
+        rot_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+        ref_vec = np.matmul(ref_vector, rot_matrix)
+        far_point = mid_point + 300 * ref_vec
+        print("Ref_vec: " + str(ref_vec))
+        for p in range(test_contour.shape[0] - 1):
+            # Return true if line segments AB and CD intersect
+            if intersect(mid_point, far_point, test_contour[p], test_contour[p + 1]):
+                break  # goes back to for loop through angles
+            break
+        no_intersection += [np.round(np.rad2deg(theta))]
+    return no_intersection
+
+
 def plot_contours(img, contours, mean_point):
     # Display the image and plot all contours in a array of contours
     fig, ax = plt.subplots()
@@ -150,6 +169,8 @@ def main():
     contours_mean_point_list = np.zeros((num_images, 3))  # list of all mean points of contours of interest
     healthy_mean_points = [0, 0, 0]  # to storage points on the skull axis line (healthy slices)
     gap_mean_points = [0, 0, 0]  # to points on the skull axis line (bone missing slices)
+    healthy_slices = []
+    gap_slices = []
 
     for i in range(num_images):
         img = series_arr[:, :, i]
@@ -171,6 +192,7 @@ def main():
             # deviations caused by the points os face bone
             mean_point = list(pma[0]) + [i]
             healthy_mean_points = np.vstack([healthy_mean_points, mean_point])
+            healthy_slices += [i]
             contours_mean_point_list[i] = mean_point
         contours_list[i] = cw
 
@@ -183,6 +205,7 @@ def main():
         if len(contours_list[j]) == 1:  # bone missing skull slice has only one contour
             mean_point = point_on_line(mean, direction, j)
             gap_mean_points = np.vstack([gap_mean_points, mean_point])
+            gap_slices += [j]
             contours_mean_point_list[j] = mean_point
             # plot_contours(series_arr[:, :, j], contours_list[j], mean_point)
         else:
@@ -209,50 +232,57 @@ def main():
     # plt.show()
 
     # Invert contours
-    inverted_contours_list = copy.deepcopy(contours_list)
-    for m in range(num_images):
-        for contour in inverted_contours_list[m]:
-            contour_2d = contour[:, :2]
-            for n in range(contour.shape[0]):
-                contour_2d[n] = invert_point(contour_2d[n], contours_mean_point_list[m])
-                contour[:, :2] = contour_2d
-        # plot_inverted_contours(series_arr[:, :, m], \
-        #                       inverted_contours_list[m], contours_list[m], contours_mean_point_list[m])
+    # inverted_contours_list = copy.deepcopy(contours_list)
+    # for m in range(num_images):
+    #     for contour in inverted_contours_list[m]:
+    #         contour_2d = contour[:, :2]
+    #         for n in range(contour.shape[0]):
+    #             contour_2d[n] = invert_point(contour_2d[n], contours_mean_point_list[m])
+    #             contour[:, :2] = contour_2d
+    #     # plot_inverted_contours(series_arr[:, :, m], \
+    #     #                       inverted_contours_list[m], contours_list[m], contours_mean_point_list[m])
 
     # Determine gap region on contour
-    ref_vector = np.array([1, 0])
-    # fazer um for pelos contornos com falha
+    # fazer um for pelos contornos com falha usando gap_slices
     test_contour = contours_list[50][0][:, :2]
     mid_point = contours_mean_point_list[50][0:2]
-    # plot_contours(series_arr[:, :, 50], [test_contour], mid_point)
-    for theta in range(0, 360, 30):
-        print("Theta: " + str(theta))
-        theta = np.deg2rad(theta)
-        rot_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
-        ref_vec = np.matmul(ref_vector, rot_matrix)
-        far_point = mid_point + 300 * ref_vec
-        print("Ref_vec: " + str(ref_vec))
-        no_intersection = []
-        intersected = []
-        for p in range(test_contour.shape[0]-1):
-            # Return true if line segments AB and CD intersect
-            if intersect(mid_point, far_point, test_contour[p], test_contour[p + 1]):
-                intersected += [test_contour[p], test_contour[p + 1]]
-        if len(intersected) == 0:
-            no_intersection += [theta]
-            print("No intersection by angles: " + str(no_intersection))
-        else:
-            # angle plot is counterclockwise because x and y are switched
-            fig, ax = plt.subplots()
-            contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
-            ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
-            ax.plot([mid_point[1], far_point[1]], [mid_point[0], far_point[0]], 'r--')
-            for q in range(0, len(intersected), 2):
-                ax.plot([intersected[q][1], intersected[q + 1][1]], [intersected[q][0], intersected[q + 1][0]], linewidth=2)
-                # format: [x1, x2] [y1, y2]
-            ax.axis('image')
-            plt.colorbar(contour_img, ax=ax)
-            plt.show()
+    ang_min = 0
+    ang_max = 360
+    step = 30
+    no_intersection = test_intersection(test_contour, mid_point, ang_min, ang_max, step)
+    print(str(no_intersection))
+    # ref_vector = np.array([1, 0])
+    # for theta in range(ang_min, ang_max, step):
+    #     print("Theta: " + str(theta))
+    #     theta = np.deg2rad(theta)
+    #     rot_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+    #     ref_vec = np.matmul(ref_vector, rot_matrix)
+    #     far_point = mid_point + 300 * ref_vec
+    #     print("Ref_vec: " + str(ref_vec))
+    #     no_intersection = []
+    #     intersected = []
+    #     for p in range(test_contour.shape[0]-1):
+    #         # Return true if line segments AB and CD intersect
+    #         if intersect(mid_point, far_point, test_contour[p], test_contour[p + 1]):
+    #             intersected += [test_contour[p], test_contour[p + 1]]
+    #     if len(intersected) == 0:
+    #         no_intersection += [np.rad2deg(theta)]
+    #         print("No intersection by angles: " + str(no_intersection))
+    #     else:
+    #         # angle goes counterclockwise on plot because x and y are switched
+    #         fig, ax = plt.subplots()
+    #         contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
+    #         ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
+    #         ax.plot([mid_point[1], far_point[1]], [mid_point[0], far_point[0]], 'r--')
+    #         for q in range(0, len(intersected), 2):
+    #             ax.plot([intersected[q][1], intersected[q + 1][1]], [intersected[q][0], intersected[q + 1][0]], linewidth=2)
+    #             # format: [x1, x2] [y1, y2]
+    #         ax.axis('image')
+    #         plt.colorbar(contour_img, ax=ax)
+    #         plt.show()
+    min_gap_angle = no_intersection[0]
+    max_gap_angle = no_intersection[len(no_intersection)-1]
+
 
     # Separate contours in parts: internal, external, gap edges
 
