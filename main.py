@@ -118,13 +118,13 @@ def test_intersection(test_contour, mid_point, ang_min, ang_max, step):
         rot_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
         ref_vec = np.matmul(ref_vector, rot_matrix)
         far_point = mid_point + 300 * ref_vec
-        print("Ref_vec: " + str(ref_vec))
+        # print("Ref_vec: " + str(ref_vec))
         for p in range(test_contour.shape[0] - 1):
             # Return true if line segments AB and CD intersect
             if intersect(mid_point, far_point, test_contour[p], test_contour[p + 1]):
                 intersected += 1
         if intersected == 0:
-            no_intersection += [np.round(np.rad2deg(theta))]
+            no_intersection += [int(np.round(np.rad2deg(theta)))]
             print("not intersected")
     return no_intersection
 
@@ -253,37 +253,46 @@ def main():
     step = 30
     no_intersection = test_intersection(test_contour, mid_point, ang_min, ang_max, step)
     print(str(no_intersection))
-    # ref_vector = np.array([1, 0])
-    # for theta in range(ang_min, ang_max, step):
-    #     print("Theta: " + str(theta))
-    #     theta = np.deg2rad(theta)
-    #     rot_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
-    #     ref_vec = np.matmul(ref_vector, rot_matrix)
-    #     far_point = mid_point + 300 * ref_vec
-    #     print("Ref_vec: " + str(ref_vec))
-    #     no_intersection = []
-    #     intersected = []
-    #     for p in range(test_contour.shape[0]-1):
-    #         # Return true if line segments AB and CD intersect
-    #         if intersect(mid_point, far_point, test_contour[p], test_contour[p + 1]):
-    #             intersected += [test_contour[p], test_contour[p + 1]]
-    #     if len(intersected) == 0:
-    #         no_intersection += [np.rad2deg(theta)]
-    #         print("No intersection by angles: " + str(no_intersection))
-    #     else:
-    #         # angle goes counterclockwise on plot because x and y are switched
-    #         fig, ax = plt.subplots()
-    #         contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
-    #         ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
-    #         ax.plot([mid_point[1], far_point[1]], [mid_point[0], far_point[0]], 'r--')
-    #         for q in range(0, len(intersected), 2):
-    #             ax.plot([intersected[q][1], intersected[q + 1][1]], [intersected[q][0], intersected[q + 1][0]], linewidth=2)
-    #             # format: [x1, x2] [y1, y2]
-    #         ax.axis('image')
-    #         plt.colorbar(contour_img, ax=ax)
-    #         plt.show()
-    min_gap_angle = no_intersection[0]
-    max_gap_angle = no_intersection[len(no_intersection)-1]
+    # refinando região a partir dos angulos encontrados
+    min_gap_angle = no_intersection[0] - 30
+    max_gap_angle = no_intersection[len(no_intersection) - 1] + 35
+    step = 5
+    ref_vector = np.array([1, 0])
+    no_intersection = []
+    for theta in range(min_gap_angle, max_gap_angle, step):
+        print("Theta: " + str(theta))
+        theta = np.deg2rad(theta)
+        rot_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+        ref_vec = np.matmul(ref_vector, rot_matrix)
+        far_point = mid_point + 300 * ref_vec
+        # print("Ref_vec: " + str(ref_vec))
+        intersected = []
+        for p in range(test_contour.shape[0]-1):
+            # Return true if line segments AB and CD intersect
+            if intersect(mid_point, far_point, test_contour[p], test_contour[p + 1]):
+                intersected += [test_contour[p], test_contour[p + 1]]
+        if len(intersected) == 0:
+            no_intersection += [int(np.round(np.rad2deg(theta)))]
+            print("No intersection by angles: " + str(no_intersection))
+        else:
+            # angle goes counterclockwise on plot because x and y are switched
+            fig, ax = plt.subplots()
+            contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
+            ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
+            ax.plot([mid_point[1], far_point[1]], [mid_point[0], far_point[0]], 'r--')
+            for q in range(0, len(intersected), 2):
+                ax.plot([intersected[q][1], intersected[q + 1][1]], [intersected[q][0], intersected[q + 1][0]], linewidth=2)
+                # format: [x1, x2] [y1, y2]
+            ax.axis('image')
+            plt.colorbar(contour_img, ax=ax)
+            plt.show()
+        print (str(no_intersection))
+    if no_intersection[0] - 20 < min_gap_angle:
+        min_gap_angle = no_intersection[0] - 50
+
+    if no_intersection[len(no_intersection) - 1] > max_gap_angle - 25:
+        pass
+
 
 
     # Separate contours in parts: internal, external, gap edges
