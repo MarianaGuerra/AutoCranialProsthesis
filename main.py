@@ -267,23 +267,49 @@ def main():
     print (str(theta_6))
     # gap_angles = [theta_3, theta_6]
     gap_angles = [np.deg2rad(theta_3), np.deg2rad(theta_6)]
-    print("Gap angles" + str(gap_angles))
+    print("Gap angles " + str(theta_3) + ", " + str(theta_6))
 
     # test plot
+    # fig, ax = plt.subplots()
+    # contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
+    # ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
+    # rot_matrix = np.array(
+    #     [[np.cos(gap_angles[0]), -np.sin(gap_angles[0])], [np.sin(gap_angles[0]), np.cos(gap_angles[0])]])
+    # ref_vec = np.matmul(np.array([1, 0]), rot_matrix)
+    # far_point = mid_point + 300 * ref_vec
+    # ax.plot([mid_point[1], far_point[1]], [mid_point[0], far_point[0]], 'r--')
+    # rot_matrix = np.array(
+    #     [[np.cos(gap_angles[1]), -np.sin(gap_angles[1])], [np.sin(gap_angles[1]), np.cos(gap_angles[1])]])
+    # ref_vec = np.matmul(np.array([1, 0]), rot_matrix)
+    # far_point = mid_point + 300 * ref_vec
+    # ax.plot([mid_point[1], far_point[1]], [mid_point[0], far_point[0]], 'b--')
+    # ax.axis('image')
+    # plt.colorbar(contour_img, ax=ax)
+    # plt.show()
+
+    cut_points_1 = intersect_contour(test_contour, mid_point, theta_3 - 20)
+    cut_points_2 = intersect_contour(test_contour, mid_point, theta_6 + 20)
+
+    # test plot
+    gap_angles = [np.deg2rad(theta_3-20), np.deg2rad(theta_6+20)]
     fig, ax = plt.subplots()
     contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
     ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
-    rot_matrix = np.array([[np.cos(gap_angles[0]), -np.sin(gap_angles[0])], [np.sin(gap_angles[0]), np.cos(gap_angles[0])]])
+    rot_matrix = np.array(
+        [[np.cos(gap_angles[0]), -np.sin(gap_angles[0])], [np.sin(gap_angles[0]), np.cos(gap_angles[0])]])
     ref_vec = np.matmul(np.array([1, 0]), rot_matrix)
     far_point = mid_point + 300 * ref_vec
     ax.plot([mid_point[1], far_point[1]], [mid_point[0], far_point[0]], 'r--')
-    rot_matrix = np.array([[np.cos(gap_angles[1]), -np.sin(gap_angles[1])], [np.sin(gap_angles[1]), np.cos(gap_angles[1])]])
+    rot_matrix = np.array(
+        [[np.cos(gap_angles[1]), -np.sin(gap_angles[1])], [np.sin(gap_angles[1]), np.cos(gap_angles[1])]])
     ref_vec = np.matmul(np.array([1, 0]), rot_matrix)
     far_point = mid_point + 300 * ref_vec
     ax.plot([mid_point[1], far_point[1]], [mid_point[0], far_point[0]], 'b--')
     ax.axis('image')
     plt.colorbar(contour_img, ax=ax)
     plt.show()
+
+
 
     # Separate contours in parts: internal, external, gap edges
 
