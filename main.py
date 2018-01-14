@@ -108,25 +108,27 @@ def intersect(a, b, c, d):
     return ccw(a, c, d) != ccw(b, c, d) and ccw(a, b, c) != ccw(a, b, d)
 
 
-def test_intersection(test_contour, mid_point, ang_min, ang_max, step):
+def intersect_contour(test_contour, mid_point, theta):
     ref_vector = np.array([1, 0])
-    no_intersection = []
+    theta = np.deg2rad(theta)
+    rot_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+    ref_vec = np.matmul(ref_vector, rot_matrix)
+    far_point = mid_point + 300 * ref_vec
+    intersected = []
+    for p in range(test_contour.shape[0] - 1):
+        # Return true if line segments AB and CD intersect
+        if intersect(mid_point, far_point, test_contour[p], test_contour[p + 1]):
+            intersected += [test_contour[p], test_contour[p + 1]]
+    if len(intersected) == 0:
+        return None
+    return intersected
+
+
+def intersect_trough_angles(test_contour, mid_point, ang_min, ang_max, step):
     for theta in range(ang_min, ang_max, step):
-        intersected = 0
-        print("Theta: " + str(theta))
-        theta = np.deg2rad(theta)
-        rot_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
-        ref_vec = np.matmul(ref_vector, rot_matrix)
-        far_point = mid_point + 300 * ref_vec
-        # print("Ref_vec: " + str(ref_vec))
-        for p in range(test_contour.shape[0] - 1):
-            # Return true if line segments AB and CD intersect
-            if intersect(mid_point, far_point, test_contour[p], test_contour[p + 1]):
-                intersected += 1
-        if intersected == 0:
-            no_intersection += [int(np.round(np.rad2deg(theta)))]
-            print("not intersected")
-    return no_intersection
+        intersected = intersect_contour(test_contour, mid_point, theta)
+        if intersected is None:
+            return theta
 
 
 def plot_contours(img, contours, mean_point):
@@ -169,8 +171,8 @@ def main():
     num_images = series_arr.shape[2]
     contours_list = [None] * num_images  # list of all contours of all slices
     contours_mean_point_list = np.zeros((num_images, 3))  # list of all mean points of contours of interest
-    healthy_mean_points = [0, 0, 0]  # to storage points on the skull axis line (healthy slices)
-    gap_mean_points = [0, 0, 0]  # to points on the skull axis line (bone missing slices)
+    healthy_mean_points = []  # to storage points on the skull axis line (healthy slices)
+    gap_mean_points = []  # to points on the skull axis line (bone missing slices)
     healthy_slices = []
     gap_slices = []
 
@@ -193,34 +195,34 @@ def main():
             # Sets the mean point of the shorter contour as mean point(contours are approx. concentric and avoids
             # deviations caused by the points os face bone
             mean_point = list(pma[0]) + [i]
-            healthy_mean_points = np.vstack([healthy_mean_points, mean_point])
+            healthy_mean_points += [mean_point]
             healthy_slices += [i]
             contours_mean_point_list[i] = mean_point
         contours_list[i] = cw
 
     # Calculates direction and mean point to define skull axial axis
-    healthy_mean_points = healthy_mean_points[1:, :]  # first point was 0 for inicialization only
     direction, mean = calculate_line_from_points(healthy_mean_points)
 
     # Calculates contour mean point for bone missing skull slices using skull axial axis
     for j in range(num_images):
         if len(contours_list[j]) == 1:  # bone missing skull slice has only one contour
             mean_point = point_on_line(mean, direction, j)
-            gap_mean_points = np.vstack([gap_mean_points, mean_point])
+            gap_mean_points += [mean_point]
             gap_slices += [j]
             contours_mean_point_list[j] = mean_point
             # plot_contours(series_arr[:, :, j], contours_list[j], mean_point)
         else:
             pass
             # plot_contours(series_arr[:, :, j], contours_list[j], contours_mean_point_list[j])
-    gap_mean_points = gap_mean_points[1:, :]  # first point was 0 for inicialization only
 
     # Plots in blue central contour points of healthy slices (ref points for axial axis), plots in red central contour
     # points calculated for bone missing slices, plots all contours from contours_list
     # fig = plt.figure()
     # ax = Axes3D(fig)
-    # ax.scatter(healthy_mean_points[:, 0], healthy_mean_points[:, 1], healthy_mean_points[:, 2])
-    # ax.scatter(gap_mean_points[:, 0], gap_mean_points[:, 1], gap_mean_points[:, 2], c='red')
+    # hmpa = np.asarray(healthy_mean_points)
+    # gmpa = np.asarray(gap_mean_points)
+    # ax.scatter(hmpa[:, 0], hmpa[:, 1], hmpa[:, 2])
+    # ax.scatter(gmpa[:, 0], gmpa[:, 1], gmpa[:, 2], c='red')
     # for k in range(num_images):
     #     for contour in contours_list[k]:
     #         ax.plot(contour[:, 0], contour[:, 1], k, linewidth=1)
@@ -228,9 +230,6 @@ def main():
     # ax.set_ylim3d(0, 512)
     # ax.set_zlim3d(0, num_images)
     # plt.axis('scaled')
-    # # p1 = point_on_line(mean, direction, 160)  # reference point for line plot
-    # # p2 = point_on_line(mean, direction, 240)  # reference point for line plot
-    # # plt.plot([p1[0], p2[0]], [p1[1], p2[1]], [p1[2], p2[2]])  # format: [x1, x2] [y1, y2] [z1, z2]
     # plt.show()
 
     # Invert contours
@@ -248,94 +247,41 @@ def main():
     # fazer um for pelos contornos com falha usando gap_slices
     test_contour = contours_list[50][0][:, :2]
     mid_point = contours_mean_point_list[50][0:2]
-    ang_min = 0
-    ang_max = 360
-    step = 30
+    # Searching clockwise for the first angle with no intersection = first gap edge
+    theta_1 = intersect_trough_angles(test_contour, mid_point, 0, 360, 30)
+    print (str(theta_1))
+    # Refining
+    theta_2 = intersect_trough_angles(test_contour, mid_point, theta_1 - 30, theta_1, 5)
+    print (str(theta_2))
+    # Refining
+    theta_3 = intersect_trough_angles(test_contour, mid_point, theta_2 - 15, theta_2, 1)
+    print (str(theta_3))
+    # Searching counterclockwise for the first angle with no intersection = second gap edge
+    theta_4 = intersect_trough_angles(test_contour, mid_point, 360, 0, -30)
+    # Refining
+    theta_5 = intersect_trough_angles(test_contour, mid_point, theta_4 + 30, theta_4, -5)
+    # Refining
+    theta_6 = intersect_trough_angles(test_contour, mid_point, theta_5 + 15, theta_5, -1)
+    gap_angles = [theta_3, theta_6]
+    print("Gap angles" + str(gap_angles))
 
-    print(str(no_intersection))
-    # refinando região a partir dos angulos encontrados
-    min_gap_angle = no_intersection[0] - 30
-    max_gap_angle = no_intersection[len(no_intersection) - 1] + 35
-    step = 5
-    ref_vector = np.array([1, 0])
-    no_intersection = []
-    for theta in range(min_gap_angle, max_gap_angle, step):
-        print("Theta: " + str(theta))
-        theta = np.deg2rad(theta)
-        rot_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
-        ref_vec = np.matmul(ref_vector, rot_matrix)
-        far_point = mid_point + 300 * ref_vec
-        # print("Ref_vec: " + str(ref_vec))
-        intersected = []
-        for p in range(test_contour.shape[0]-1):
-            # Return true if line segments AB and CD intersect
-            if intersect(mid_point, far_point, test_contour[p], test_contour[p + 1]):
-                intersected += [test_contour[p], test_contour[p + 1]]
-        if len(intersected) == 0:
-            no_intersection += [int(np.round(np.rad2deg(theta)))]
-            print("No intersection by angles: " + str(no_intersection))
-        else:
-            # angle goes counterclockwise on plot because x and y are switched
-            fig, ax = plt.subplots()
-            contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
-            ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
-            ax.plot([mid_point[1], far_point[1]], [mid_point[0], far_point[0]], 'r--')
-            for q in range(0, len(intersected), 2):
-                ax.plot([intersected[q][1], intersected[q + 1][1]], [intersected[q][0], intersected[q + 1][0]], linewidth=2)
-                # format: [x1, x2] [y1, y2]
-            ax.axis('image')
-            plt.colorbar(contour_img, ax=ax)
-            plt.show()
-        print (str(no_intersection))
-    if no_intersection[0] - min_gap_angle < 20:
-        min_gap_angle = no_intersection[0] - 30
-
-    if max_gap_angle - 5 - no_intersection[len(no_intersection) - 1] < 20:
-        max_gap_angle = no_intersection[len(no_intersection)] + 35
-    
-
+    # test plot
+    fig, ax = plt.subplots()
+    contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
+    ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
+    rot_matrix = np.array([[np.cos(gap_angles[0]), -np.sin(gap_angles[0])], [np.sin(gap_angles[0]), np.cos(gap_angles[0])]])
+    ref_vec = np.matmul(np.array([1, 0]), rot_matrix)
+    far_point = mid_point + 300 * ref_vec
+    ax.plot([mid_point[1], far_point[1]], [mid_point[0], far_point[0]], 'r--')
+    rot_matrix = np.array([[np.cos(gap_angles[1]), -np.sin(gap_angles[1])], [np.sin(gap_angles[1]), np.cos(gap_angles[1])]])
+    ref_vec = np.matmul(np.array([1, 0]), rot_matrix)
+    far_point = mid_point + 300 * ref_vec
+    ax.plot([mid_point[1], far_point[1]], [mid_point[0], far_point[0]], 'b--')
+    ax.axis('image')
+    plt.colorbar(contour_img, ax=ax)
+    plt.show()
 
     # Separate contours in parts: internal, external, gap edges
-
-# def contours_to_patient_coord_sys(series_arr, datasets, contours_list, contours_mean_point_list):  # reformar
-#     """
-#     Transforms the contours to patient coordinate system and stores them in contours_list
-#     :param datasets: loaded DICOM images by load_dicom_folder
-#     :param series_arr: 3D ndarray of DICOM image series converted by dicom_datasets_to_numpy
-#     :return: contours_list: list of lists of 3D ndarrays (contours) for every slice, on patient coord system
-#              mean_points_real: 3D ndarray of mean points of healthy skull slices on patient coord system
-#              contours_mean_point_list: list of the mean point of one contour for each slice
-#     """
-#     contours_list_real = [None] * series_arr.shape[2]  # list of all contours of all slices
-#     contours_mean_point_list_real = [None] * series_arr.shape[2]  # list of all mean points of contours of interest
-#
-#     # Converts all contours for patient coordinate space based on DICOM tag information
-#     for i in range(series_arr.shape[2]):
-#         # Collecting image information
-#         img_orient_pat = [float(x) for x in list(datasets[i].ImageOrientationPatient)]
-#         img_position_pat = [float(x) for x in list(datasets[i].ImagePositionPatient)]
-#         pixel_spacing = [float(x) for x in list(datasets[i].PixelSpacing)]
-#         iop1 = np.array(img_orient_pat[0:3])
-#         iop2 = np.array(img_orient_pat[3:6])
-#
-#         # Coordinate system conversion for all contours
-#         for contour in contours_list[i]:
-#             for k in range(len(contour)):
-#                 contour[k] = img_position_pat \
-#                              + iop1 * pixel_spacing[1] * contour[k][0] \
-#                              + iop2 * pixel_spacing[0] * contour[k][1]
-#         contours_list_real[i] = cw_real
-#         # Collecting points to skull axial axis and lateral inversion calculation
-#         if len(pma) == 2:  # healthy skull slice has outside and inside contours (pixel_mean_array has 2 points)
-#             # uses the mean point of the external contour (contours are approx. concentric)
-#             pixel_mean_real = img_position_pat \
-#                               + iop1 * pixel_spacing[1] * pma[1][0] \
-#                               + iop2 * pixel_spacing[0] * pma[1][1]
-#             contours_mean_point_list[i] = pixel_mean_real
-#             mean_points_list_real = np.vstack([mean_points_real, pixel_mean_real])
-#
-#     return contours_list_real, mean_points_list_real
-
 
 if __name__ == '__main__':
     main()
