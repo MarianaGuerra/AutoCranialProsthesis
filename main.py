@@ -258,11 +258,15 @@ def main():
     print (str(theta_3))
     # Searching counterclockwise for the first angle with no intersection = second gap edge
     theta_4 = intersect_trough_angles(test_contour, mid_point, 360, 0, -30)
+    print (str(theta_4))
     # Refining
     theta_5 = intersect_trough_angles(test_contour, mid_point, theta_4 + 30, theta_4, -5)
+    print (str(theta_5))
     # Refining
     theta_6 = intersect_trough_angles(test_contour, mid_point, theta_5 + 15, theta_5, -1)
-    gap_angles = [theta_3, theta_6]
+    print (str(theta_6))
+    # gap_angles = [theta_3, theta_6]
+    gap_angles = [np.deg2rad(theta_3), np.deg2rad(theta_6)]
     print("Gap angles" + str(gap_angles))
 
     # test plot
