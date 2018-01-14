@@ -251,7 +251,7 @@ def main():
     ang_min = 0
     ang_max = 360
     step = 30
-    no_intersection = test_intersection(test_contour, mid_point, ang_min, ang_max, step)
+
     print(str(no_intersection))
     # refinando região a partir dos angulos encontrados
     min_gap_angle = no_intersection[0] - 30
@@ -287,12 +287,12 @@ def main():
             plt.colorbar(contour_img, ax=ax)
             plt.show()
         print (str(no_intersection))
-    if no_intersection[0] - 20 < min_gap_angle:
-        min_gap_angle = no_intersection[0] - 50
+    if no_intersection[0] - min_gap_angle < 20:
+        min_gap_angle = no_intersection[0] - 30
 
-    if no_intersection[len(no_intersection) - 1] > max_gap_angle - 25:
-        pass
-
+    if max_gap_angle - 5 - no_intersection[len(no_intersection) - 1] < 20:
+        max_gap_angle = no_intersection[len(no_intersection)] + 35
+    
 
 
     # Separate contours in parts: internal, external, gap edges
