@@ -115,13 +115,15 @@ def intersect_contour(test_contour, mid_point, theta):
     ref_vec = np.matmul(ref_vector, rot_matrix)
     far_point = mid_point + 300 * ref_vec
     intersected = []
+    intersected_index = []
     for p in range(test_contour.shape[0] - 1):
         # Return true if line segments AB and CD intersect
         if intersect(mid_point, far_point, test_contour[p], test_contour[p + 1]):
             intersected += [test_contour[p], test_contour[p + 1]]
+            intersected_index += [p, p+1]
     if len(intersected) == 0:
         return None
-    return intersected
+    return intersected_index
 
 
 def intersect_trough_angles(test_contour, mid_point, ang_min, ang_max, step):
@@ -249,6 +251,7 @@ def main():
     mid_point = contours_mean_point_list[50][0:2]
     # Searching clockwise for the first angle with no intersection = first gap edge
     theta_1 = intersect_trough_angles(test_contour, mid_point, 0, 360, 30)
+    print ("Theta 1 to 6")
     print (str(theta_1))
     # Refining
     theta_2 = intersect_trough_angles(test_contour, mid_point, theta_1 - 30, theta_1, 5)
@@ -290,21 +293,15 @@ def main():
     cut_points_1 = intersect_contour(test_contour, mid_point, theta_3 - 20)
     cut_points_2 = intersect_contour(test_contour, mid_point, theta_6 + 20)
 
+    cutted_contour1 = test_contour[cut_points_1[0]:cut_points_1[3]]
+    cutted_contour2 = test_contour[cut_points_2[0]:cut_points_2[3]]
     # test plot
     gap_angles = [np.deg2rad(theta_3-20), np.deg2rad(theta_6+20)]
     fig, ax = plt.subplots()
     contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
     ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
-    rot_matrix = np.array(
-        [[np.cos(gap_angles[0]), -np.sin(gap_angles[0])], [np.sin(gap_angles[0]), np.cos(gap_angles[0])]])
-    ref_vec = np.matmul(np.array([1, 0]), rot_matrix)
-    far_point = mid_point + 300 * ref_vec
-    ax.plot([mid_point[1], far_point[1]], [mid_point[0], far_point[0]], 'r--')
-    rot_matrix = np.array(
-        [[np.cos(gap_angles[1]), -np.sin(gap_angles[1])], [np.sin(gap_angles[1]), np.cos(gap_angles[1])]])
-    ref_vec = np.matmul(np.array([1, 0]), rot_matrix)
-    far_point = mid_point + 300 * ref_vec
-    ax.plot([mid_point[1], far_point[1]], [mid_point[0], far_point[0]], 'b--')
+    ax.plot(cutted_contour1[:, 1], cutted_contour1[:, 0], linewidth=2)
+    ax.plot(cutted_contour2[:, 1], cutted_contour2[:, 0], linewidth=2)
     ax.axis('image')
     plt.colorbar(contour_img, ax=ax)
     plt.show()
