@@ -293,22 +293,50 @@ def main():
     cut_points_1 = intersect_contour(test_contour, mid_point, theta_3 - 20)
     cut_points_2 = intersect_contour(test_contour, mid_point, theta_6 + 20)
 
-    cutted_contour1 = test_contour[cut_points_1[0]:cut_points_1[3]]
-    cutted_contour2 = test_contour[cut_points_2[0]:cut_points_2[3]]
+    contour_edge1 = test_contour[cut_points_1[0]:cut_points_1[3]]
+    contour_edge2 = test_contour[cut_points_2[0]:cut_points_2[3]]
+
     # test plot
     gap_angles = [np.deg2rad(theta_3-20), np.deg2rad(theta_6+20)]
-    fig, ax = plt.subplots()
-    contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
-    ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
-    ax.plot(cutted_contour1[:, 1], cutted_contour1[:, 0], linewidth=2)
-    ax.plot(cutted_contour2[:, 1], cutted_contour2[:, 0], linewidth=2)
-    ax.axis('image')
-    plt.colorbar(contour_img, ax=ax)
-    plt.show()
-
-
+    # fig, ax = plt.subplots()
+    # contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
+    # ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
+    # ax.plot(contour_edge1[:, 1], contour_edge1[:, 0], 'y--', linewidth=2)
+    # ax.plot(contour_edge2[:, 1], contour_edge2[:, 0], 'm--', linewidth=2)
+    # ax.scatter(contour_edge1[0][1], contour_edge1[0][0], c='red')
+    # ax.scatter(contour_edge2[0][1], contour_edge2[0][0], c='red')
+    # ax.axis('image')
+    # plt.colorbar(contour_img, ax=ax)
+    # plt.show()
 
     # Separate contours in parts: internal, external, gap edges
+    # contour_edge_1: amarelo, 1os ptos são externos
+    # contour_edge_2: magenta, 1os ptos são internos
+    ang_coef_list = []
+    for p in range(contour_edge1.shape[0] - 1):
+        ang_coef = (contour_edge1[p + 1][1] - contour_edge1[p][1]) / (contour_edge1[p + 1][0] - contour_edge1[p][0])
+        ang_coef_list += [ang_coef]
+    # print(str(ang_coef_list))
+    ang_coef_var = np.zeros(len(ang_coef_list)-1)
+    for q in range(len(ang_coef_list) - 1):
+        ang_coef_var[q] = abs(ang_coef_list[q] - ang_coef_list[q - 1])
+    lim = 1
+    # find edge first segment
+    for r in range(len(ang_coef_var) - 2):
+        if ang_coef_var[r+1] >= ang_coef_var[r] + lim:
+            edge_first_seg = r
+            break
+    # find edge final segment
+    for s in range(len(ang_coef_var)-1, 0, -1):
+        if ang_coef_var[s-1] >= ang_coef_var[s] + lim:
+            edge_final_seg = s
+            break
+    plt.plot(range(len(ang_coef_var)), ang_coef_var[:], '.', edge_first_seg, ang_coef_var[edge_first_seg], 'x', edge_final_seg, ang_coef_var[edge_final_seg],'x')
+    plt.show()
+    # if ang_coef_list[q] >= 1.2*ang_coef_list[q - 1]:
+
+
+
 
 if __name__ == '__main__':
     main()
