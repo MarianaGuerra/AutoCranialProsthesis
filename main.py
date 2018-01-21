@@ -53,7 +53,7 @@ def calculate_line_from_points(mpr):
     :return: 3D ndarray vector that defines the line; 3D ndarray point on line 
     """
     mean = np.mean(mpr, 0)
-    mpr_sub = copy.copy(mpr)
+    mpr_sub = copy.deepcopy(mpr)
     mpr_sub[:] = [x - mean for x in mpr_sub]
     u, s, v = np.linalg.svd(mpr_sub)
     direction = v[0, :]
@@ -320,6 +320,7 @@ def main():
     ang_coef_var = np.zeros(len(ang_coef_list)-1)
     for q in range(len(ang_coef_list) - 1):
         ang_coef_var[q] = abs(ang_coef_list[q] - ang_coef_list[q - 1])
+    # parametrizar lim usando a linha de base, mediana, algo assim
     lim = 1
     # find edge first segment
     for r in range(len(ang_coef_var) - 2):
@@ -333,7 +334,15 @@ def main():
             break
     plt.plot(range(len(ang_coef_var)), ang_coef_var[:], '.', edge_first_seg, ang_coef_var[edge_first_seg], 'x', edge_final_seg, ang_coef_var[edge_final_seg],'x')
     plt.show()
-    # if ang_coef_list[q] >= 1.2*ang_coef_list[q - 1]:
+
+    ext_1 = range(edge_first_seg + 2)  # range is not inclusive
+    print("ext_1=" + str(ext_1[0]) + ", " + str(ext_1[len(ext_1) - 1]))
+
+    edge_1 = range(edge_first_seg + 2, edge_final_seg + 1)
+    print("edge_1=" + str(edge_1[0]) + ", " + str(edge_1[len(edge_1) - 1]))
+
+    int_1 = range(edge_final_seg + 1, len(contour_edge1))
+    print("int_1=" + str(int_1[0]) + ", " + str(int_1[len(int_1) - 1]))
 
 
 
