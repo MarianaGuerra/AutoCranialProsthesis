@@ -321,7 +321,7 @@ def main():
     for q in range(len(ang_coef_list) - 1):
         ang_coef_var[q] = abs(ang_coef_list[q] - ang_coef_list[q - 1])
     # parametrizar lim usando a linha de base, mediana, algo assim
-    lim = 1
+    lim = 0.6
     # find edge first segment
     for r in range(len(ang_coef_var) - 2):
         if ang_coef_var[r+1] >= ang_coef_var[r] + lim:
@@ -335,15 +335,24 @@ def main():
     plt.plot(range(len(ang_coef_var)), ang_coef_var[:], '.', edge_first_seg, ang_coef_var[edge_first_seg], 'x', edge_final_seg, ang_coef_var[edge_final_seg],'x')
     plt.show()
 
-    ext_1 = range(edge_first_seg + 2)  # range is not inclusive
-    print("ext_1=" + str(ext_1[0]) + ", " + str(ext_1[len(ext_1) - 1]))
+    # corrigir
+    edge_first_seg = edge_first_seg - 7
 
-    edge_1 = range(edge_first_seg + 2, edge_final_seg + 1)
-    print("edge_1=" + str(edge_1[0]) + ", " + str(edge_1[len(edge_1) - 1]))
+    ext_1 = contour_edge1[0: edge_first_seg + 2].copy()  # not inclusive
 
-    int_1 = range(edge_final_seg + 1, len(contour_edge1))
-    print("int_1=" + str(int_1[0]) + ", " + str(int_1[len(int_1) - 1]))
+    edge_1 = contour_edge1[edge_first_seg + 2: edge_final_seg + 2].copy()
 
+    int_1 = contour_edge1[edge_final_seg + 2: len(contour_edge1)-1].copy()
+
+    fig, ax = plt.subplots()
+    contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
+    ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
+    ax.plot(ext_1[:, 1], ext_1[:, 0], 'y.')
+    ax.plot(edge_1[:, 1], edge_1[:, 0], 'w.')
+    ax.plot(int_1[:, 1], int_1[:, 0], 'm.')
+    ax.axis('image')
+    plt.colorbar(contour_img, ax=ax)
+    plt.show()
 
 
 
