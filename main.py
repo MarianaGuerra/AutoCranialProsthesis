@@ -312,37 +312,31 @@ def main():
     # Separate contours in parts: internal, external, gap edges
     # contour_edge_1: amarelo, 1os ptos são externos
     # contour_edge_2: magenta, 1os ptos são internos
-    ang_coef_list = []
-    for p in range(contour_edge1.shape[0] - 1):
-        ang_coef = (contour_edge1[p + 1][1] - contour_edge1[p][1]) / (contour_edge1[p + 1][0] - contour_edge1[p][0])
-        ang_coef_list += [ang_coef]
-    # print(str(ang_coef_list))
-    ang_coef_var = np.zeros(len(ang_coef_list)-1)
-    for q in range(len(ang_coef_list) - 1):
-        ang_coef_var[q] = abs(ang_coef_list[q] - ang_coef_list[q - 1])
-    # parametrizar lim usando a linha de base, mediana, algo assim
-    lim = 0.6
-    # find edge first segment
-    for r in range(len(ang_coef_var) - 2):
-        if ang_coef_var[r+1] >= ang_coef_var[r] + lim:
-            edge_first_seg = r
-            break
-    # find edge final segment
-    for s in range(len(ang_coef_var)-1, 0, -1):
-        if ang_coef_var[s-1] >= ang_coef_var[s] + lim:
-            edge_final_seg = s
-            break
-    plt.plot(range(len(ang_coef_var)), ang_coef_var[:], '.', edge_first_seg, ang_coef_var[edge_first_seg], 'x', edge_final_seg, ang_coef_var[edge_final_seg],'x')
-    plt.show()
+    edge_points_1 = intersect_contour(contour_edge1, mid_point, theta_3 - 3)
+    edge_points_2 = intersect_contour(contour_edge2, mid_point, theta_6 + 3)
+    # fig, ax = plt.subplots()
+    # contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
+    # # ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
+    # ax.plot(contour_edge1[:, 1], contour_edge1[:, 0], 'y', linewidth=2)
+    # ax.plot(contour_edge2[:, 1], contour_edge2[:, 0], 'm', linewidth=2)
+    # ax.scatter(contour_edge1[edge_points_1[0]][1], contour_edge1[edge_points_1[0]][0], c='red')
+    # ax.scatter(contour_edge1[edge_points_1[1]][1], contour_edge1[edge_points_1[1]][0], c='green')
+    # ax.scatter(contour_edge1[edge_points_1[2]][1], contour_edge1[edge_points_1[2]][0], c='green')
+    # ax.scatter(contour_edge1[edge_points_1[3]][1], contour_edge1[edge_points_1[3]][0], c='blue')
+    # ax.scatter(contour_edge2[edge_points_2[0]][1], contour_edge2[edge_points_2[0]][0], c='red')
+    # ax.scatter(contour_edge2[edge_points_2[1]][1], contour_edge2[edge_points_2[1]][0], c='green')
+    # ax.scatter(contour_edge2[edge_points_2[2]][1], contour_edge2[edge_points_2[2]][0], c='green')
+    # ax.scatter(contour_edge2[edge_points_2[3]][1], contour_edge2[edge_points_2[3]][0], c='blue')
+    # ax.axis('image')
+    # plt.colorbar(contour_img, ax=ax)
+    # plt.show()
 
-    # corrigir
-    edge_first_seg = edge_first_seg - 7
-
-    ext_1 = contour_edge1[0: edge_first_seg + 2].copy()  # not inclusive
-
-    edge_1 = contour_edge1[edge_first_seg + 2: edge_final_seg + 2].copy()
-
-    int_1 = contour_edge1[edge_final_seg + 2: len(contour_edge1)-1].copy()
+    #edge 1
+    # 0 to contour_edge1[edge_points_1[0]] = ext
+    # contour_edge1[edge_points_1[1]] to contour_edge1[edge_points_1[2]] = edge
+    ext_1 = contour_edge1[0:edge_points_1[1]].copy()
+    edge_1 = contour_edge1[edge_points_1[1]:edge_points_1[2]+1].copy()
+    int_1 = contour_edge1[edge_points_1[2]+1: len(contour_edge1) - 1].copy()
 
     fig, ax = plt.subplots()
     contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
@@ -353,7 +347,6 @@ def main():
     ax.axis('image')
     plt.colorbar(contour_img, ax=ax)
     plt.show()
-
 
 
 if __name__ == '__main__':
