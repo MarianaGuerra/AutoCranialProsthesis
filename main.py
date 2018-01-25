@@ -331,12 +331,15 @@ def main():
     # plt.colorbar(contour_img, ax=ax)
     # plt.show()
 
-    #edge 1
-    # 0 to contour_edge1[edge_points_1[0]] = ext
-    # contour_edge1[edge_points_1[1]] to contour_edge1[edge_points_1[2]] = edge
+    # edge 1
     ext_1 = contour_edge1[0:edge_points_1[1]].copy()
     edge_1 = contour_edge1[edge_points_1[1]:edge_points_1[2]+1].copy()
     int_1 = contour_edge1[edge_points_1[2]+1: len(contour_edge1) - 1].copy()
+
+    # edge 2
+    int_2 = contour_edge2[0:edge_points_2[1]].copy()
+    edge_2 = contour_edge2[edge_points_2[1]:edge_points_2[2] + 1].copy()
+    ext_2 = contour_edge2[edge_points_2[2] + 1: len(contour_edge2) - 1].copy()
 
     fig, ax = plt.subplots()
     contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
@@ -344,6 +347,9 @@ def main():
     ax.plot(ext_1[:, 1], ext_1[:, 0], 'y.')
     ax.plot(edge_1[:, 1], edge_1[:, 0], 'w.')
     ax.plot(int_1[:, 1], int_1[:, 0], 'm.')
+    ax.plot(ext_2[:, 1], ext_2[:, 0], 'y.')
+    ax.plot(edge_2[:, 1], edge_2[:, 0], 'w.')
+    ax.plot(int_2[:, 1], int_2[:, 0], 'm.')
     ax.axis('image')
     plt.colorbar(contour_img, ax=ax)
     plt.show()
