@@ -51,12 +51,12 @@ def bspline(cv, n=100, degree=3, periodic=False):
 def main():
     gap_points = np.loadtxt("ext_control_pts_50.txt", delimiter=' ')
     gap_points = np.array(gap_points)
-    points_inv = np.loadtxt("inv_control_pts_50.txt", delimiter=' ')
+    points_inv = np.loadtxt("ext_inv_control_pts_50.txt", delimiter=' ')
     points_inv = np.array(points_inv)
 
     points = np.concatenate((gap_points, points_inv), axis=0)
 
-    spline = bspline(points, n=300, degree=6, periodic=False)
+    spline = bspline(points, n=300, degree=3, periodic=False)
 
     fig, ax = plt.subplots()
     ax.plot(gap_points[:,1], gap_points[:,0], 'm.')

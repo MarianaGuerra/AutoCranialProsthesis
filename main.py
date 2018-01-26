@@ -245,7 +245,6 @@ def main():
                 contour[:, :2] = contour_2d
         # plot_inverted_contours(series_arr[:, :, m], \
         #                       inverted_contours_list[m], contours_list[m], contours_mean_point_list[m])
-    np.savetxt("inv_control_pts_50.txt", inverted_contours_list[50][0][:, :2], delimiter=' ')
 
     # Determine gap region on contour
     # fazer um for pelos contornos com falha usando gap_slices
@@ -297,31 +296,33 @@ def main():
     cut_points_b = intersect_contour(inv_test_contour, mid_point, theta_6 + 20)
 
     # ext = x verm cut_points_b[0] até x verde cut_points_a[1]
-    # int = x azul cut_points_b[3] até bola verde cut_points_a[2]
+    # int = x azul cut_points_b[3] até bola verde cut_points_a[2] (invertido)
     inv_ext = inv_test_contour[cut_points_b[0]:cut_points_a[1]].copy()
-    inv_int = inv_test_contour[cut_points_b[3]:cut_points_a[2]].copy()
+    inv_int = inv_test_contour[cut_points_a[2]:cut_points_b[3]].copy()
 
-    fig, ax = plt.subplots()
-    #contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
-    ax.plot(inv_test_contour[:, 1], inv_test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
-    ax.plot(inv_ext[:, 1], inv_ext[:, 0], 'y--', linewidth=2)
-    ax.plot(inv_int[:, 1], inv_int[:, 0], 'm--', linewidth=2)
-    ax.scatter(inv_test_contour[cut_points_a[0]][1], inv_test_contour[cut_points_a[0]][0], c='red')
-    ax.scatter(inv_test_contour[cut_points_a[1]][1], inv_test_contour[cut_points_a[1]][0], c='green', marker='x')
-    ax.scatter(inv_test_contour[cut_points_a[2]][1], inv_test_contour[cut_points_a[2]][0], c='green')
-    ax.scatter(inv_test_contour[cut_points_a[3]][1], inv_test_contour[cut_points_a[3]][0], c='blue')
-    ax.scatter(inv_test_contour[cut_points_b[0]][1], inv_test_contour[cut_points_b[0]][0], c='red', marker='x')
-    ax.scatter(inv_test_contour[cut_points_b[1]][1], inv_test_contour[cut_points_b[1]][0], c='green')
-    ax.scatter(inv_test_contour[cut_points_b[2]][1], inv_test_contour[cut_points_b[2]][0], c='green', marker='x')
-    ax.scatter(inv_test_contour[cut_points_b[3]][1], inv_test_contour[cut_points_b[3]][0], c='blue', marker='x')
-    ax.set_xlim([0, 512])
-    ax.set_ylim([0, 512])
-    #ax.axis('image')
-    #plt.colorbar(contour_img, ax=ax)
-    plt.show()
+    # test plot
+    # fig, ax = plt.subplots()
+    # contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
+    # ax.plot(inv_test_contour[:, 1], inv_test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
+    # ax.plot(inv_ext[:, 1], inv_ext[:, 0], 'y--', linewidth=2)
+    # ax.plot(inv_int[:, 1], inv_int[:, 0], 'm--', linewidth=2)
+    # ax.scatter(inv_test_contour[cut_points_a[0]][1], inv_test_contour[cut_points_a[0]][0], c='red')
+    # ax.scatter(inv_test_contour[cut_points_a[1]][1], inv_test_contour[cut_points_a[1]][0], c='green', marker='x')
+    # ax.scatter(inv_test_contour[cut_points_a[2]][1], inv_test_contour[cut_points_a[2]][0], c='green')
+    # ax.scatter(inv_test_contour[cut_points_a[3]][1], inv_test_contour[cut_points_a[3]][0], c='blue')
+    # ax.scatter(inv_test_contour[cut_points_b[0]][1], inv_test_contour[cut_points_b[0]][0], c='red', marker='x')
+    # ax.scatter(inv_test_contour[cut_points_b[1]][1], inv_test_contour[cut_points_b[1]][0], c='green')
+    # ax.scatter(inv_test_contour[cut_points_b[2]][1], inv_test_contour[cut_points_b[2]][0], c='green', marker='x')
+    # ax.scatter(inv_test_contour[cut_points_b[3]][1], inv_test_contour[cut_points_b[3]][0], c='blue', marker='x')
+    # ax.set_xlim([0, 512])
+    # ax.set_ylim([0, 512])
+    # ax.axis('image')
+    # plt.colorbar(contour_img, ax=ax)
+    # plt.show()
 
-
-    # np.savetxt("inv_control_pts_50.txt", , delimiter=' ')
+    # np.savetxt("ext_inv_control_pts_50.txt", inv_ext , delimiter=' ')
+    # np.savetxt("int_inv_control_pts_50.txt", inv_int, delimiter=' ')
+    # print("ok")
 
     cut_points_1 = intersect_contour(test_contour, mid_point, theta_3 - 20)
     cut_points_2 = intersect_contour(test_contour, mid_point, theta_6 + 20)
@@ -347,6 +348,8 @@ def main():
     # contour_edge_2: magenta, 1os ptos são internos
     edge_points_1 = intersect_contour(contour_edge1, mid_point, theta_3 - 3)
     edge_points_2 = intersect_contour(contour_edge2, mid_point, theta_6 + 3)
+
+    # test plot
     # fig, ax = plt.subplots()
     # contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
     # # ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
@@ -374,10 +377,15 @@ def main():
     edge_2 = contour_edge2[edge_points_2[1]:edge_points_2[2] + 1].copy()
     ext_2 = contour_edge2[edge_points_2[2] + 1: len(contour_edge2) - 1].copy()
 
-    ext_control_pts = np.concatenate((ext_1, ext_2), axis=0)
+    # ext_control_pts = np.concatenate((ext_1, ext_2), axis=0)
     # np.savetxt("ext_control_pts_50.txt", ext_control_pts, delimiter=' ')
-    print("ok")
+    # print("ok")
 
+    # int_control_pts = np.concatenate((int_1, int_2), axis=0)
+    # np.savetxt("int_control_pts_50.txt", int_control_pts, delimiter=' ')
+    # print("ok")
+
+    # test plot
     # fig, ax = plt.subplots()
     # contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
     # ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
