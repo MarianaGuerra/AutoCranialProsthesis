@@ -2,72 +2,67 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate as si
+from scipy import interpolate
+from scipy.interpolate import interp1d
+
+# gap_points = np.loadtxt("ext_control_pts_50.txt", delimiter=' ')
+gap_points = np.loadtxt("ext_control_pts_50_40graus.txt", delimiter=' ')
+gap_points = np.array(gap_points)
+points_inv = np.loadtxt("ext_inv_control_pts_50_40graus.txt", delimiter=' ')
+points_inv = np.array(points_inv)
+mean_point = [227.96358683, 254.8181934]
+
+# rotacionar inv_points
+# coord centrada = coord pto - coord mp
+#coord centrada * matriz rotação
+#coord final = coord centrada + coord
+theta = 5
+theta_rad = np.deg2rad(theta)
+rot_matrix = np.array([[np.cos(theta_rad), -np.sin(theta_rad)], [np.sin(theta_rad), np.cos(theta_rad)]])
+ref_vector = np.matmul(ref_vector, rot_matrix)
+
+x = gap_points[:,1]
+y = gap_points[:,0]
+s1 = np.arange(135)
+s2 = np.arange(355,487)
+s = np.concatenate((s1,s2), axis=0)
+ss = []
+xs = []
+ys = []
+
+for i in range(0, 131, 10):
+    ss += [i]
+    xs.append(x[i])
+    ys.append(y[i])
+
+for j in range(365, 487, 10):
+    ss += [j]
+    xs.append(x[j-223])
+    ys.append(y[j-223])
+
+#for k in range(0,)
+# Specifies the kind of interpolation as a string (‘linear’, ‘nearest’, ‘zero’, ‘slinear’, ‘quadratic’, ‘cubic’
+
+fx = interp1d(ss, xs, kind='quadratic')
+snew = np.linspace(0, 484, num=485, endpoint=True)
+plt.plot(ss, xs, 'o', snew, fx(snew), '-')
+plt.legend(['data','interpolation'], loc='best')
+
+fy = interp1d(ss, ys, kind='quadratic')
+plt.plot(ss, ys, 'o', snew, fy(snew), '-')
+
+fig, ax = plt.subplots()
+ax.plot(gap_points[:, 1], gap_points[:, 0], 'm.')
+ax.plot(fx(snew), fy(snew), 'g-')
+
+# fig, ax = plt.subplots()
+# ax.plot(s, x, 'm.')
+ax.plot(points_inv[:, 1], points_inv[:, 0], 'b-')
+# #ax.plot(spline[:,1], spline[:,0],'b-')
+ax.set_xlim([0, 512])
+ax.set_ylim([0, 512])
+plt.show()
 
 
-def bspline(cv, n=100, degree=3, periodic=False):
-    """ Calculate n samples on a bspline
-
-        cv :      Array ov control vertices
-        n  :      Number of samples to return
-        degree:   Curve degree
-        periodic: True - Curve is closed
-                  False - Curve is open
-    """
-
-    # If periodic, extend the point array by count+degree+1
-    cv = np.asarray(cv)
-    count = len(cv)
-
-    if periodic:
-        factor, fraction = divmod(count+degree+1, count)
-        cv = np.concatenate((cv,) * factor + (cv[:fraction],))
-        count = len(cv)
-        degree = np.clip(degree,1,degree)
-
-    # If opened, prevent degree from exceeding count-1
-    else:
-        degree = np.clip(degree,1,count-1)
-
-    # Calculate knot vector
-    kv = None
-    if periodic:
-        kv = np.arange(0-degree,count+degree+degree-1,dtype='int')
-    else:
-        kv = np.array([0]*degree + range(count-degree+1) + [count-degree]*degree,dtype='int')
-
-    # Calculate query range
-    u = np.linspace(periodic,(count-degree),n)
-
-
-    # Calculate result
-    arange = np.arange(len(u))
-    points = np.zeros((len(u),cv.shape[1]))
-    for i in xrange(cv.shape[1]):
-        points[arange,i] = si.splev(u, (kv,cv[:,i],degree))
-
-    return points
-
-
-def main():
-    gap_points = np.loadtxt("ext_control_pts_50.txt", delimiter=' ')
-    gap_points = np.array(gap_points)
-    points_inv = np.loadtxt("ext_inv_control_pts_50.txt", delimiter=' ')
-    points_inv = np.array(points_inv)
-
-    points = np.concatenate((gap_points, points_inv), axis=0)
-
-    spline = bspline(points, n=300, degree=3, periodic=False)
-
-    fig, ax = plt.subplots()
-    ax.plot(gap_points[:,1], gap_points[:,0], 'm.')
-    ax.plot(points_inv[:, 1], points_inv[:, 0], 'g.')
-    ax.plot(spline[:,1], spline[:,0],'b-')
-    ax.set_xlim([0, 512])
-    ax.set_ylim([0, 512])
-    plt.show()
-
-
-if __name__ == '__main__':
-    main()
 
 

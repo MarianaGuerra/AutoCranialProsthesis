@@ -250,6 +250,7 @@ def main():
     # fazer um for pelos contornos com falha usando gap_slices
     test_contour = contours_list[50][0][:, :2]
     mid_point = contours_mean_point_list[50][0:2]
+    print("Mean point slice 50: " + str(mid_point))
     # Searching clockwise for the first angle with no intersection = first gap edge
     theta_1 = intersect_trough_angles(test_contour, mid_point, 0, 360, 30)
     print ("Theta 1 to 6")
@@ -291,9 +292,12 @@ def main():
     # plt.colorbar(contour_img, ax=ax)
     # plt.show()
 
+    cut_angle_a = theta_3 - 40
+    cut_angle_b = theta_6 + 40
+
     inv_test_contour = inverted_contours_list[50][0][:, :2]
-    cut_points_a = intersect_contour(inv_test_contour, mid_point, theta_3 - 20)
-    cut_points_b = intersect_contour(inv_test_contour, mid_point, theta_6 + 20)
+    cut_points_a = intersect_contour(inv_test_contour, mid_point, cut_angle_a)
+    cut_points_b = intersect_contour(inv_test_contour, mid_point, cut_angle_b)
 
     # ext = x verm cut_points_b[0] até x verde cut_points_a[1]
     # int = x azul cut_points_b[3] até bola verde cut_points_a[2] (invertido)
@@ -320,18 +324,18 @@ def main():
     # plt.colorbar(contour_img, ax=ax)
     # plt.show()
 
-    # np.savetxt("ext_inv_control_pts_50.txt", inv_ext , delimiter=' ')
-    # np.savetxt("int_inv_control_pts_50.txt", inv_int, delimiter=' ')
-    # print("ok")
+    # np.savetxt("ext_inv_control_pts_50_40graus.txt", inv_ext , delimiter=' ')
+    # np.savetxt("int_inv_control_pts_50_40graus.txt", inv_int, delimiter=' ')
+    print(str(np.shape(inv_ext))+ " " + "ok")
 
-    cut_points_1 = intersect_contour(test_contour, mid_point, theta_3 - 20)
-    cut_points_2 = intersect_contour(test_contour, mid_point, theta_6 + 20)
+    cut_points_1 = intersect_contour(test_contour, mid_point, cut_angle_a)
+    cut_points_2 = intersect_contour(test_contour, mid_point, cut_angle_b)
 
     contour_edge1 = test_contour[cut_points_1[0]:cut_points_1[3]].copy()
     contour_edge2 = test_contour[cut_points_2[0]:cut_points_2[3]].copy()
 
     # test plot
-    gap_angles = [np.deg2rad(theta_3-20), np.deg2rad(theta_6+20)]
+    gap_angles = [np.deg2rad(cut_angle_a), np.deg2rad(cut_angle_b)]
     # fig, ax = plt.subplots()
     # contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
     # ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
@@ -378,8 +382,8 @@ def main():
     ext_2 = contour_edge2[edge_points_2[2] + 1: len(contour_edge2) - 1].copy()
 
     # ext_control_pts = np.concatenate((ext_1, ext_2), axis=0)
-    # np.savetxt("ext_control_pts_50.txt", ext_control_pts, delimiter=' ')
-    # print("ok")
+    # np.savetxt("ext_control_pts_50_40graus.txt", ext_control_pts, delimiter=' ')
+    print(str(np.shape(ext_1)) + " " + str(np.shape(ext_2)) + " " + "ok")
 
     # int_control_pts = np.concatenate((int_1, int_2), axis=0)
     # np.savetxt("int_control_pts_50.txt", int_control_pts, delimiter=' ')
