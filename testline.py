@@ -10,6 +10,7 @@ gap_points = np.loadtxt("ext_control_pts_50_40graus.txt", delimiter=' ')
 gap_points = np.array(gap_points)
 points_inv = np.loadtxt("ext_inv_control_pts_50_40graus.txt", delimiter=' ')
 points_inv = np.array(points_inv)
+points_inv_rot = points_inv.copy()
 mean_point = [227.96358683, 254.8181934]
 
 # rotacionar inv_points
@@ -19,7 +20,16 @@ mean_point = [227.96358683, 254.8181934]
 theta = 5
 theta_rad = np.deg2rad(theta)
 rot_matrix = np.array([[np.cos(theta_rad), -np.sin(theta_rad)], [np.sin(theta_rad), np.cos(theta_rad)]])
-ref_vector = np.matmul(ref_vector, rot_matrix)
+
+for p in range(points_inv.shape[0]):
+    centered_coord = points_inv[p] - mean_point
+    rotated_coord = np.matmul(centered_coord, rot_matrix)
+    final_coord = mean_point + rotated_coord
+    points_inv_rot[p] = final_coord
+
+# fig, ax = plt.subplots()
+# ax.plot(points_inv_rot[:, 1], points_inv_rot[:, 0], 'm.')
+# ax.plot(points_inv[:, 1], points_inv[:, 0], 'b-')
 
 x = gap_points[:,1]
 y = gap_points[:,0]
@@ -40,7 +50,6 @@ for j in range(365, 487, 10):
     xs.append(x[j-223])
     ys.append(y[j-223])
 
-#for k in range(0,)
 # Specifies the kind of interpolation as a string (‘linear’, ‘nearest’, ‘zero’, ‘slinear’, ‘quadratic’, ‘cubic’
 
 fx = interp1d(ss, xs, kind='quadratic')
@@ -54,11 +63,7 @@ plt.plot(ss, ys, 'o', snew, fy(snew), '-')
 fig, ax = plt.subplots()
 ax.plot(gap_points[:, 1], gap_points[:, 0], 'm.')
 ax.plot(fx(snew), fy(snew), 'g-')
-
-# fig, ax = plt.subplots()
-# ax.plot(s, x, 'm.')
-ax.plot(points_inv[:, 1], points_inv[:, 0], 'b-')
-# #ax.plot(spline[:,1], spline[:,0],'b-')
+ax.plot(points_inv_rot[:, 1], points_inv_rot[:, 0], 'b-')
 ax.set_xlim([0, 512])
 ax.set_ylim([0, 512])
 plt.show()
