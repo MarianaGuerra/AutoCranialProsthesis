@@ -326,8 +326,8 @@ def main():
 
     for i in range(10, ext_1.shape[0] - 10, 10):
         ss += [i]
-        xs.append(ext_1[i,1])
-        ys.append(ext_1[i,0])
+        xs.append(ext_1[i, 1])
+        ys.append(ext_1[i, 0])
 
     for j in range(spline_points_number - ext_2.shape[0] + 10, spline_points_number - 10, 10):
         ss += [j]
@@ -337,7 +337,7 @@ def main():
     fx = interp1d(ss, xs, kind='quadratic')
     fy = interp1d(ss, ys, kind='quadratic')
 
-    snew = np.linspace(0 + 10, j - 1, num=j, endpoint=True)
+    snew = np.linspace(ext_1.shape[0] - 40, spline_points_number - ext_2.shape[0] + 40 - 1, num=j, endpoint=True)
 
     # calcular fx(snew), fy(snew)
     plt.plot(ss, xs, 'o', snew, fx(snew), '-')
