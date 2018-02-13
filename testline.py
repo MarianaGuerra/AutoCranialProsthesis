@@ -31,11 +31,11 @@ for p in range(points_inv.shape[0]):
 # ax.plot(points_inv_rot[:, 1], points_inv_rot[:, 0], 'm.')
 # ax.plot(points_inv[:, 1], points_inv[:, 0], 'b-')
 
-x = gap_points[:,1]
-y = gap_points[:,0]
-s1 = np.arange(135)
-s2 = np.arange(355,487)
-s = np.concatenate((s1,s2), axis=0)
+x = gap_points[:, 1]
+y = gap_points[:, 0]
+# s1 = np.arange(135)
+# s2 = np.arange(355, 487)
+# s = np.concatenate((s1,s2), axis=0)
 ss = []
 xs = []
 ys = []
@@ -51,6 +51,7 @@ for j in range(365, 487, 10):
     ys.append(y[j-223])
 
 # Specifies the kind of interpolation as a string (‘linear’, ‘nearest’, ‘zero’, ‘slinear’, ‘quadratic’, ‘cubic’
+# https://docs.scipy.org/doc/scipy/reference/tutorial/interpolate.html
 
 fx = interp1d(ss, xs, kind='quadratic')
 snew = np.linspace(0, 484, num=485, endpoint=True)

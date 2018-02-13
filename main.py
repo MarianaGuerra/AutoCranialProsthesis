@@ -8,6 +8,7 @@ from skimage import measure
 from scipy.spatial import distance
 import matplotlib.pyplot as plt
 import copy
+from scipy.interpolate import interp1d
 import scipy.interpolate as si
 import random
 from mpl_toolkits.mplot3d import Axes3D
@@ -134,6 +135,31 @@ def intersect_trough_angles(test_contour, mid_point, ang_min, ang_max, step):
             return theta
 
 
+def find_gap_angles(mid_point, test_contour):
+    # Searching clockwise for the first angle with no intersection = first gap edge
+    theta_1 = intersect_trough_angles(test_contour, mid_point, 0, 360, 30)
+    print ("Theta 1 to 6")
+    print (str(theta_1))
+    # Refining
+    theta_2 = intersect_trough_angles(test_contour, mid_point, theta_1 - 30, theta_1, 5)
+    print (str(theta_2))
+    # Refining
+    theta_3 = intersect_trough_angles(test_contour, mid_point, theta_2 - 15, theta_2, 1)
+    print (str(theta_3))
+    # Searching counterclockwise for the first angle with no intersection = second gap edge
+    theta_4 = intersect_trough_angles(test_contour, mid_point, 360, 0, -30)
+    print (str(theta_4))
+    # Refining
+    theta_5 = intersect_trough_angles(test_contour, mid_point, theta_4 + 30, theta_4, -5)
+    print (str(theta_5))
+    # Refining
+    theta_6 = intersect_trough_angles(test_contour, mid_point, theta_5 + 15, theta_5, -1)
+    print (str(theta_6))
+    # gap_angles = [theta_3, theta_6]
+    gap_angles = [np.deg2rad(theta_3), np.deg2rad(theta_6)]
+    return theta_3, theta_6
+
+
 def plot_contours(img, contours, mean_point):
     # Display the image and plot all contours in a array of contours
     fig, ax = plt.subplots()
@@ -235,7 +261,7 @@ def main():
     # plt.axis('scaled')
     # plt.show()
 
-    # Invert contours
+    # Inverts contours
     inverted_contours_list = copy.deepcopy(contours_list)
     for m in range(num_images):
         for contour in inverted_contours_list[m]:
@@ -246,130 +272,36 @@ def main():
         # plot_inverted_contours(series_arr[:, :, m], \
         #                       inverted_contours_list[m], contours_list[m], contours_mean_point_list[m])
 
-    # Determine gap region on contour
-    # fazer um for pelos contornos com falha usando gap_slices
+    # Determines gap region on contour
+    # fazer um for pelos contornos com falha usando gap_slices, onde está 50 substituir por n
     test_contour = contours_list[50][0][:, :2]
     mid_point = contours_mean_point_list[50][0:2]
-    print("Mean point slice 50: " + str(mid_point))
-    # Searching clockwise for the first angle with no intersection = first gap edge
-    theta_1 = intersect_trough_angles(test_contour, mid_point, 0, 360, 30)
-    print ("Theta 1 to 6")
-    print (str(theta_1))
-    # Refining
-    theta_2 = intersect_trough_angles(test_contour, mid_point, theta_1 - 30, theta_1, 5)
-    print (str(theta_2))
-    # Refining
-    theta_3 = intersect_trough_angles(test_contour, mid_point, theta_2 - 15, theta_2, 1)
-    print (str(theta_3))
-    # Searching counterclockwise for the first angle with no intersection = second gap edge
-    theta_4 = intersect_trough_angles(test_contour, mid_point, 360, 0, -30)
-    print (str(theta_4))
-    # Refining
-    theta_5 = intersect_trough_angles(test_contour, mid_point, theta_4 + 30, theta_4, -5)
-    print (str(theta_5))
-    # Refining
-    theta_6 = intersect_trough_angles(test_contour, mid_point, theta_5 + 15, theta_5, -1)
-    print (str(theta_6))
-    # gap_angles = [theta_3, theta_6]
-    gap_angles = [np.deg2rad(theta_3), np.deg2rad(theta_6)]
-    print("Gap angles " + str(theta_3) + ", " + str(theta_6))
+    theta_3, theta_6 = find_gap_angles(mid_point, test_contour)
+    # print("Gap angles " + str(theta_3) + ", " + str(theta_6))
 
-    # test plot
-    # fig, ax = plt.subplots()
-    # contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
-    # ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
-    # rot_matrix = np.array(
-    #     [[np.cos(gap_angles[0]), -np.sin(gap_angles[0])], [np.sin(gap_angles[0]), np.cos(gap_angles[0])]])
-    # ref_vec = np.matmul(np.array([1, 0]), rot_matrix)
-    # far_point = mid_point + 300 * ref_vec
-    # ax.plot([mid_point[1], far_point[1]], [mid_point[0], far_point[0]], 'r--')
-    # rot_matrix = np.array(
-    #     [[np.cos(gap_angles[1]), -np.sin(gap_angles[1])], [np.sin(gap_angles[1]), np.cos(gap_angles[1])]])
-    # ref_vec = np.matmul(np.array([1, 0]), rot_matrix)
-    # far_point = mid_point + 300 * ref_vec
-    # ax.plot([mid_point[1], far_point[1]], [mid_point[0], far_point[0]], 'b--')
-    # ax.axis('image')
-    # plt.colorbar(contour_img, ax=ax)
-    # plt.show()
-
+    # Performs contour cutting  ATENÇÃO: PODE NÃO VALER PARA FALHAS NO LADO ESQUERDO - investigar
+    # Setting cut angles based on the gap angles determined above
     cut_angle_a = theta_3 - 40
     cut_angle_b = theta_6 + 40
 
+    # Separates inverted contour in parts: internal, external
     inv_test_contour = inverted_contours_list[50][0][:, :2]
     cut_points_a = intersect_contour(inv_test_contour, mid_point, cut_angle_a)
     cut_points_b = intersect_contour(inv_test_contour, mid_point, cut_angle_b)
-
-    # ext = x verm cut_points_b[0] até x verde cut_points_a[1]
-    # int = x azul cut_points_b[3] até bola verde cut_points_a[2] (invertido)
     inv_ext = inv_test_contour[cut_points_b[0]:cut_points_a[1]].copy()
     inv_int = inv_test_contour[cut_points_a[2]:cut_points_b[3]].copy()
 
-    # test plot
-    # fig, ax = plt.subplots()
-    # contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
-    # ax.plot(inv_test_contour[:, 1], inv_test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
-    # ax.plot(inv_ext[:, 1], inv_ext[:, 0], 'y--', linewidth=2)
-    # ax.plot(inv_int[:, 1], inv_int[:, 0], 'm--', linewidth=2)
-    # ax.scatter(inv_test_contour[cut_points_a[0]][1], inv_test_contour[cut_points_a[0]][0], c='red')
-    # ax.scatter(inv_test_contour[cut_points_a[1]][1], inv_test_contour[cut_points_a[1]][0], c='green', marker='x')
-    # ax.scatter(inv_test_contour[cut_points_a[2]][1], inv_test_contour[cut_points_a[2]][0], c='green')
-    # ax.scatter(inv_test_contour[cut_points_a[3]][1], inv_test_contour[cut_points_a[3]][0], c='blue')
-    # ax.scatter(inv_test_contour[cut_points_b[0]][1], inv_test_contour[cut_points_b[0]][0], c='red', marker='x')
-    # ax.scatter(inv_test_contour[cut_points_b[1]][1], inv_test_contour[cut_points_b[1]][0], c='green')
-    # ax.scatter(inv_test_contour[cut_points_b[2]][1], inv_test_contour[cut_points_b[2]][0], c='green', marker='x')
-    # ax.scatter(inv_test_contour[cut_points_b[3]][1], inv_test_contour[cut_points_b[3]][0], c='blue', marker='x')
-    # ax.set_xlim([0, 512])
-    # ax.set_ylim([0, 512])
-    # ax.axis('image')
-    # plt.colorbar(contour_img, ax=ax)
-    # plt.show()
-
-    # np.savetxt("ext_inv_control_pts_50_40graus.txt", inv_ext , delimiter=' ')
-    # np.savetxt("int_inv_control_pts_50_40graus.txt", inv_int, delimiter=' ')
-    print(str(np.shape(inv_ext))+ " " + "ok")
-
+    # Separates contour in parts: internal, external, gap edges
     cut_points_1 = intersect_contour(test_contour, mid_point, cut_angle_a)
     cut_points_2 = intersect_contour(test_contour, mid_point, cut_angle_b)
 
     contour_edge1 = test_contour[cut_points_1[0]:cut_points_1[3]].copy()
     contour_edge2 = test_contour[cut_points_2[0]:cut_points_2[3]].copy()
 
-    # test plot
-    gap_angles = [np.deg2rad(cut_angle_a), np.deg2rad(cut_angle_b)]
-    # fig, ax = plt.subplots()
-    # contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
-    # ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
-    # ax.plot(contour_edge1[:, 1], contour_edge1[:, 0], 'y--', linewidth=2)
-    # ax.plot(contour_edge2[:, 1], contour_edge2[:, 0], 'm--', linewidth=2)
-    # ax.scatter(contour_edge1[0][1], contour_edge1[0][0], c='red')
-    # ax.scatter(contour_edge2[0][1], contour_edge2[0][0], c='red')
-    # ax.axis('image')
-    # plt.colorbar(contour_img, ax=ax)
-    # plt.show()
-
-    # Separate contours in parts: internal, external, gap edges
     # contour_edge_1: amarelo, 1os ptos são externos
     # contour_edge_2: magenta, 1os ptos são internos
     edge_points_1 = intersect_contour(contour_edge1, mid_point, theta_3 - 3)
     edge_points_2 = intersect_contour(contour_edge2, mid_point, theta_6 + 3)
-
-    # test plot
-    # fig, ax = plt.subplots()
-    # contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
-    # # ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
-    # ax.plot(contour_edge1[:, 1], contour_edge1[:, 0], 'y', linewidth=2)
-    # ax.plot(contour_edge2[:, 1], contour_edge2[:, 0], 'm', linewidth=2)
-    # ax.scatter(contour_edge1[edge_points_1[0]][1], contour_edge1[edge_points_1[0]][0], c='red')
-    # ax.scatter(contour_edge1[edge_points_1[1]][1], contour_edge1[edge_points_1[1]][0], c='green')
-    # ax.scatter(contour_edge1[edge_points_1[2]][1], contour_edge1[edge_points_1[2]][0], c='green')
-    # ax.scatter(contour_edge1[edge_points_1[3]][1], contour_edge1[edge_points_1[3]][0], c='blue')
-    # ax.scatter(contour_edge2[edge_points_2[0]][1], contour_edge2[edge_points_2[0]][0], c='red')
-    # ax.scatter(contour_edge2[edge_points_2[1]][1], contour_edge2[edge_points_2[1]][0], c='green')
-    # ax.scatter(contour_edge2[edge_points_2[2]][1], contour_edge2[edge_points_2[2]][0], c='green')
-    # ax.scatter(contour_edge2[edge_points_2[3]][1], contour_edge2[edge_points_2[3]][0], c='blue')
-    # ax.axis('image')
-    # plt.colorbar(contour_img, ax=ax)
-    # plt.show()
 
     # edge 1
     ext_1 = contour_edge1[0:edge_points_1[1]].copy()
@@ -381,27 +313,40 @@ def main():
     edge_2 = contour_edge2[edge_points_2[1]:edge_points_2[2] + 1].copy()
     ext_2 = contour_edge2[edge_points_2[2] + 1: len(contour_edge2) - 1].copy()
 
-    # ext_control_pts = np.concatenate((ext_1, ext_2), axis=0)
-    # np.savetxt("ext_control_pts_50_40graus.txt", ext_control_pts, delimiter=' ')
-    print(str(np.shape(ext_1)) + " " + str(np.shape(ext_2)) + " " + "ok")
+    # Performs interpolation to find the gap points
+    # pegar n pontos contorno invertido
+    spline_points_number = inv_ext.shape[0]
+    ss = []
+    xs = []
+    ys = []
 
-    # int_control_pts = np.concatenate((int_1, int_2), axis=0)
-    # np.savetxt("int_control_pts_50.txt", int_control_pts, delimiter=' ')
-    # print("ok")
+    # calcular as posições dos pontos de ext1 e ext2 dentro desse n
+    # amostragem apenas a partir de 10 pontos de distância da extremidade da falha
+    # calcular fx, fy, snew (apenas entre os 3 pontos amostra extremos da falha)
 
-    # test plot
-    # fig, ax = plt.subplots()
-    # contour_img = ax.imshow(series_arr[:, :, 50], interpolation='nearest', cmap=plt.cm.gray, origin='bottom')
-    # ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
-    # ax.plot(ext_1[:, 1], ext_1[:, 0], 'y.')
-    # ax.plot(edge_1[:, 1], edge_1[:, 0], 'w.')
-    # ax.plot(int_1[:, 1], int_1[:, 0], 'm.')
-    # ax.plot(ext_2[:, 1], ext_2[:, 0], 'y.')
-    # ax.plot(edge_2[:, 1], edge_2[:, 0], 'w.')
-    # ax.plot(int_2[:, 1], int_2[:, 0], 'm.')
-    # ax.axis('image')
-    # plt.colorbar(contour_img, ax=ax)
-    # plt.show()
+    for i in range(10, ext_1.shape[0] - 10, 10):
+        ss += [i]
+        xs.append(ext_1[i,1])
+        ys.append(ext_1[i,0])
+
+    for j in range(spline_points_number - ext_2.shape[0] + 10, spline_points_number - 10, 10):
+        ss += [j]
+        xs.append(ext_2[j - (spline_points_number - ext_2.shape[0]), 1])
+        ys.append(ext_2[j - (spline_points_number - ext_2.shape[0]), 0])
+
+    fx = interp1d(ss, xs, kind='quadratic')
+    fy = interp1d(ss, ys, kind='quadratic')
+
+    snew = np.linspace(0 + 10, j - 1, num=j, endpoint=True)
+
+    # calcular fx(snew), fy(snew)
+    plt.plot(ss, xs, 'o', snew, fx(snew), '-')
+    plt.plot(ss, ys, 'o', snew, fy(snew), '-')
+    plt.legend(['data', 'interpolation'], loc='best')
+    plt.show()
+
+    # fazer array de pontos
+    # colocar esse array em estrutura (lista) com número de slices com falha no slice correspondente
 
 
 if __name__ == '__main__':
