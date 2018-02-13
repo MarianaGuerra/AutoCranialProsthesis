@@ -272,6 +272,8 @@ def main():
         # plot_inverted_contours(series_arr[:, :, m], \
         #                       inverted_contours_list[m], contours_list[m], contours_mean_point_list[m])
 
+    splines_list = [None] * gap_slices  # list of all spline points for all gap slices
+
     # Determines gap region on contour
     # fazer um for pelos contornos com falha usando gap_slices, onde está 50 substituir por n
     test_contour = contours_list[50][0][:, :2]
@@ -346,8 +348,12 @@ def main():
     plt.show()
 
     # fazer array de pontos
-    # colocar esse array em estrutura (lista) com número de slices com falha no slice correspondente
+    array = np.zeros([snew.shape[0],2])
+    array[:,0] = fx(snew)
+    array[:,1] = fy(snew)
 
+    # colocar esse array em estrutura (lista) com número de slices com falha no slice correspondente
+    # splines_list[p] = array
 
 if __name__ == '__main__':
     main()
