@@ -208,7 +208,7 @@ def find_gap_angles(mid_point, test_contour):
     return gap_angles
 
 
-def interpolation(ext_1, ext_2, inv_ext):
+def interpolation(ext_1, ext_2, inv_ext, test_contour):
     spline_points_number = inv_ext.shape[0]
     ss = []
     xs = []
@@ -234,14 +234,15 @@ def interpolation(ext_1, ext_2, inv_ext):
     # plt.show()
     # fazer array de pontos
     array = np.zeros([snew.shape[0], 2])
-    array[:, 0] = fx(snew)
-    array[:, 1] = fy(snew)
+    array[:, 1] = fx(snew)
+    array[:, 0] = fy(snew)
 
     fig, ax = plt.subplots()
     # ax.plot(gap_points[:, 1], gap_points[:, 0], 'm.')
-    ax.plot(ext_1[:, 0], ext_1[:, 1], 'b.')
-    ax.plot(ext_2[:, 0], ext_2[:, 1], 'b.')
-    ax.plot(array[:, 0], array[:, 1], 'g-')
+    ax.plot(test_contour[:, 1], test_contour[:, 0], 'm-')
+    ax.plot(ext_1[:, 1], ext_1[:, 0], 'b-')
+    ax.plot(ext_2[:, 1], ext_2[:, 0], 'b-')
+    ax.plot(array[:, 1], array[:, 0], 'g-')
     # ax.plot(points_inv_rot[:, 1], points_inv_rot[:, 0], 'b-')
     ax.set_xlim([0, 512])
     ax.set_ylim([0, 512])
@@ -412,7 +413,7 @@ def main():
         ext_2 = contour_edge2[edge_points_2[2] + 1: len(contour_edge2) - 1].copy()
 
         # Performs interpolation to find the gap points
-        spline_points = interpolation(ext_1, ext_2, inv_ext)
+        spline_points = interpolation(ext_1, ext_2, inv_ext, test_contour)
 
         # colocar esse array em estrutura (lista) com número de slices com falha no slice correspondente
         splines_list[p] = np.array(spline_points)
@@ -422,10 +423,12 @@ def main():
     ax = Axes3D(fig)
     for q in range(num_images):
         for contour in contours_list[q]:
+            # ax.plot(contour[:, 0], contour[:, 1], q, 'b-')
             ax.plot(contour[:, 0], contour[:, 1], q, 'b-')
     for r in range(len(gap_slices)):
         if splines_list[r] is not None:
-            ax.plot(splines_list[r][:, 1], splines_list[r][:, 0], gap_slices[r], 'r-')
+            ax.plot(splines_list[r][:, 0], splines_list[r][:, 1], gap_slices[r], 'r-')
+            # ax.plot(splines_list[r][:, 1], splines_list[r][:, 0], 'r-')
     ax.set_xlim3d(0, 512)
     ax.set_ylim3d(0, 512)
     ax.set_zlim3d(0, num_images)
