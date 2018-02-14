@@ -143,20 +143,20 @@ def find_gap_angles(mid_point, test_contour):
     if theta_1 is None:
         print("Failed to find gap on contour")
         return
-    print ("Theta 1 to 6")
-    print (str(theta_1))
+    # print ("Theta 1 to 6")
+    # print (str(theta_1))
     # Refining
     theta_2 = intersect_trough_angles(test_contour, mid_point, theta_1 - 10, theta_1, 1)
-    print (str(theta_2))
+    # print (str(theta_2))
     # Refining
     theta_3 = intersect_trough_angles(test_contour, mid_point, theta_2 - 5, theta_2, 0.5)
-    print (str(theta_3))
+    # print (str(theta_3))
     # Searching counterclockwise for the first angle with no intersection = second gap edge
     theta_4 = intersect_trough_angles(test_contour, mid_point, 360, 0, -5)
-    print (str(theta_4))
+    # print (str(theta_4))
     # Refining
     theta_5 = intersect_trough_angles(test_contour, mid_point, theta_4 + 10, theta_4, -1)
-    print (str(theta_5))
+    # print (str(theta_5))
 
     # fig, ax = plt.subplots()
     # ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=1)  # x and y are switched for correct image plot
@@ -201,8 +201,9 @@ def find_gap_angles(mid_point, test_contour):
     # plt.show()
     # Refining
     theta_6 = intersect_trough_angles(test_contour, mid_point, theta_5 + 5, theta_5, -0.5)
-    print (str(theta_6))
+    # print (str(theta_6))
     gap_angles = [theta_3, theta_6]
+    print("Found gap on contour")
     # gap_angles = [np.deg2rad(theta_3), np.deg2rad(theta_6)]
     return gap_angles
 
@@ -235,6 +236,16 @@ def interpolation(ext_1, ext_2, inv_ext):
     array = np.zeros([snew.shape[0], 2])
     array[:, 0] = fx(snew)
     array[:, 1] = fy(snew)
+
+    fig, ax = plt.subplots()
+    # ax.plot(gap_points[:, 1], gap_points[:, 0], 'm.')
+    ax.plot(ext_1[:, 0], ext_1[:, 1], 'b.')
+    ax.plot(ext_2[:, 0], ext_2[:, 1], 'b.')
+    ax.plot(array[:, 0], array[:, 1], 'g-')
+    # ax.plot(points_inv_rot[:, 1], points_inv_rot[:, 0], 'b-')
+    ax.set_xlim([0, 512])
+    ax.set_ylim([0, 512])
+    plt.show()
     return array
 
 
@@ -354,7 +365,7 @@ def main():
         #                       inverted_contours_list[m], contours_list[m], contours_mean_point_list[m])
     print("Inverted contours list done")
 
-    # Determines gap region on contour
+    # Determines gap region on contour and interpolates funstion to fill it
     splines_list = [None] * len(gap_slices)  # list of all spline points for all gap slices
     for p in range(len(gap_slices)):
         print("Contour of image " + str(gap_slices[p]))
@@ -404,8 +415,22 @@ def main():
         spline_points = interpolation(ext_1, ext_2, inv_ext)
 
         # colocar esse array em estrutura (lista) com número de slices com falha no slice correspondente
-        splines_list[p] = spline_points
+        splines_list[p] = np.array(spline_points)
     print("Splines done")
+
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    for q in range(num_images):
+        for contour in contours_list[q]:
+            ax.plot(contour[:, 0], contour[:, 1], q, 'b-')
+    for r in range(len(gap_slices)):
+        if splines_list[r] is not None:
+            ax.plot(splines_list[r][:, 1], splines_list[r][:, 0], gap_slices[r], 'r-')
+    ax.set_xlim3d(0, 512)
+    ax.set_ylim3d(0, 512)
+    ax.set_zlim3d(0, num_images)
+    plt.axis('scaled')
+    plt.show()
 
 if __name__ == '__main__':
     main()
