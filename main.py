@@ -43,7 +43,7 @@ def select_contours(img):
             if distance.euclidean(pixel_ref, pixel_mean) <= dist_thresh:
                 contours_wanted.append(contour_3d)
                 pixel_mean_array.append(pixel_mean)
-    print("Set " + str(len(contours_wanted)) + " contour(s)")
+    print("  Set " + str(len(contours_wanted)) + " contour(s)")
     return contours_wanted, pixel_mean_array
 
 
@@ -130,7 +130,7 @@ def intersect_contour(test_contour, mid_point, theta):
 
 def intersect_trough_angles(test_contour, mid_point, ang_min, ang_max, step):
     a = np.arange(ang_min, ang_max+step, step)
-    #print(str(a))
+    # print(str(a))
     for theta in a:
         intersected = intersect_contour(test_contour, mid_point, theta)
         if intersected is None:
@@ -141,7 +141,7 @@ def find_gap_angles(mid_point, test_contour):
     # Searching clockwise for the first angle with no intersection = first gap edge
     theta_1 = intersect_trough_angles(test_contour, mid_point, 0, 360, 5)
     if theta_1 is None:
-        print("Failed to find gap on contour")
+        print("  Failed to find gap on contour")
         return
     # print ("Theta 1 to 6")
     # print (str(theta_1))
@@ -203,7 +203,7 @@ def find_gap_angles(mid_point, test_contour):
     theta_6 = intersect_trough_angles(test_contour, mid_point, theta_5 + 5, theta_5, -0.5)
     # print (str(theta_6))
     gap_angles = [theta_3, theta_6]
-    print("Found gap on contour")
+    print("  Found gap on contour")
     # gap_angles = [np.deg2rad(theta_3), np.deg2rad(theta_6)]
     return gap_angles
 
@@ -399,8 +399,8 @@ def main():
 
         # contour_edge_1: amarelo, 1os ptos são externos
         # contour_edge_2: magenta, 1os ptos são internos
-        edge_points_1 = intersect_contour(contour_edge1, mid_point, gap_angles[0] - 3)
-        edge_points_2 = intersect_contour(contour_edge2, mid_point, gap_angles[1] + 3)
+        edge_points_1 = intersect_contour(contour_edge1, mid_point, gap_angles[0] - 5)
+        edge_points_2 = intersect_contour(contour_edge2, mid_point, gap_angles[1] + 5)
 
         # edge 1
         ext_1 = contour_edge1[0:edge_points_1[1]].copy()
