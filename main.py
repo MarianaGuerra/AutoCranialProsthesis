@@ -24,7 +24,7 @@ def select_contours(img):
     :param img: 2D ndarray of DICOM image converted by dicom_datasets_to_numpy
     :return: list with the wanted contours; list with the central pixel of each wanted contour
     """
-    # Find contours at a constant value
+    # Find contours at a constant threshold value
     contours = measure.find_contours(img, 200)
     # print("Found " + str(len(contours)) + " contour(s)")
     # Select the nearest contours with respect to the center pixel of the image
@@ -237,16 +237,16 @@ def interpolation(ext_1, ext_2, inv_ext, test_contour):
     array[:, 1] = fx(snew)
     array[:, 0] = fy(snew)
 
-    fig, ax = plt.subplots()
-    # ax.plot(gap_points[:, 1], gap_points[:, 0], 'm.')
-    ax.plot(test_contour[:, 1], test_contour[:, 0], 'm-')
-    ax.plot(ext_1[:, 1], ext_1[:, 0], 'b-')
-    ax.plot(ext_2[:, 1], ext_2[:, 0], 'b-')
-    ax.plot(array[:, 1], array[:, 0], 'g-')
-    # ax.plot(points_inv_rot[:, 1], points_inv_rot[:, 0], 'b-')
-    ax.set_xlim([0, 512])
-    ax.set_ylim([0, 512])
-    plt.show()
+    # fig, ax = plt.subplots()
+    # # ax.plot(gap_points[:, 1], gap_points[:, 0], 'm.')
+    # ax.plot(test_contour[:, 1], test_contour[:, 0], 'm-')
+    # ax.plot(ext_1[:, 1], ext_1[:, 0], 'b-')
+    # ax.plot(ext_2[:, 1], ext_2[:, 0], 'b-')
+    # ax.plot(array[:, 1], array[:, 0], 'g-')
+    # # ax.plot(points_inv_rot[:, 1], points_inv_rot[:, 0], 'b-')
+    # ax.set_xlim([0, 512])
+    # ax.set_ylim([0, 512])
+    # plt.show()
     return array
 
 
@@ -404,13 +404,36 @@ def main():
 
         # edge 1
         ext_1 = contour_edge1[0:edge_points_1[1]].copy()
+        if gap_slices[p] == 69:
+            np.savetxt("ext_1_img69.txt", ext_1, delimiter=' ')
         edge_1 = contour_edge1[edge_points_1[1]:edge_points_1[2]+1].copy()
         int_1 = contour_edge1[edge_points_1[2]+1: len(contour_edge1) - 1].copy()
+
+        # # testando eliminar parte de edge nos trechos ext
+        # ang_coef_list = []
+        # for p in range(ext_1.shape[0] - 1):
+        #     ang_coef = (ext_1[p + 1][1] - ext_1[p][1]) / (ext_1[p + 1][0] - ext_1[p][0])
+        #     ang_coef_list += [ang_coef]
+        # # print(str(ang_coef_list))
+        # ang_coef_var = np.zeros(len(ang_coef_list) - 1)
+        # for q in range(len(ang_coef_list) - 1):
+        #     ang_coef_var[q] = abs(ang_coef_list[q] - ang_coef_list[q - 1])
+        # # parametrizar lim usando a linha de base, mediana, algo assim
+        # lim = 0.6
+        # # find edge first segment
+        # for r in range(len(ang_coef_var) - 2):
+        #     if ang_coef_var[r + 1] >= ang_coef_var[r] + lim:
+        #         edge_first_seg = r
+        #         break
+        # plt.plot(range(len(ang_coef_var)), ang_coef_var[:], '.', edge_first_seg, ang_coef_var[edge_first_seg], 'x')
+        # plt.show()
 
         # edge 2
         int_2 = contour_edge2[0:edge_points_2[1]].copy()
         edge_2 = contour_edge2[edge_points_2[1]:edge_points_2[2] + 1].copy()
         ext_2 = contour_edge2[edge_points_2[2] + 1: len(contour_edge2) - 1].copy()
+        if gap_slices[p] == 69:
+            np.savetxt("ext_2_img69.txt", ext_2, delimiter=' ')
 
         # Performs interpolation to find the gap points
         spline_points = interpolation(ext_1, ext_2, inv_ext, test_contour)
@@ -419,21 +442,19 @@ def main():
         splines_list[p] = np.array(spline_points)
     print("Splines done")
 
-    fig = plt.figure()
-    ax = Axes3D(fig)
-    for q in range(num_images):
-        for contour in contours_list[q]:
-            # ax.plot(contour[:, 0], contour[:, 1], q, 'b-')
-            ax.plot(contour[:, 0], contour[:, 1], q, 'b-')
-    for r in range(len(gap_slices)):
-        if splines_list[r] is not None:
-            ax.plot(splines_list[r][:, 0], splines_list[r][:, 1], gap_slices[r], 'r-')
-            # ax.plot(splines_list[r][:, 1], splines_list[r][:, 0], 'r-')
-    ax.set_xlim3d(0, 512)
-    ax.set_ylim3d(0, 512)
-    ax.set_zlim3d(0, num_images)
-    plt.axis('scaled')
-    plt.show()
+    # fig = plt.figure()
+    # ax = Axes3D(fig)
+    # for q in range(num_images):
+    #     for contour in contours_list[q]:
+    #         ax.plot(contour[:, 0], contour[:, 1], q, 'b-')
+    # for r in range(len(gap_slices)):
+    #     if splines_list[r] is not None:
+    #         ax.plot(splines_list[r][:, 0], splines_list[r][:, 1], gap_slices[r], 'r-')
+    # ax.set_xlim3d(0, 512)
+    # ax.set_ylim3d(0, 512)
+    # ax.set_zlim3d(0, num_images)
+    # plt.axis('scaled')
+    # plt.show()
 
 if __name__ == '__main__':
     main()
