@@ -9,6 +9,7 @@ from scipy.spatial import distance
 import matplotlib.pyplot as plt
 import copy
 from scipy.interpolate import interp1d
+import math
 import scipy.interpolate as si
 import random
 from mpl_toolkits.mplot3d import Axes3D
@@ -250,6 +251,46 @@ def interpolation(ext_1, ext_2, inv_ext, test_contour):
     return array
 
 
+def find_inflection(seg, n, lim):
+    ang_list = []
+    for p in range(seg.shape[0]-1):
+        ang = math.atan2((seg[p + 1][0] - seg[p][0]), (seg[p + 1][1] - seg[p][1]))
+        ang_list += [np.rad2deg(ang)]
+
+    ang_list = np.convolve(ang_list, np.ones((n,)) / n, mode='valid')
+
+    plt.figure()
+    plt.plot(range(len(ang_list)), ang_list[:], '.')
+    plt.title("ang_list")
+    plt.show()
+
+    ang_var = np.zeros(len(ang_list) - 1)
+    for q in range(len(ang_list) - 1):
+        ang_var[q] = abs(ang_list[q+1] - ang_list[q])
+
+    ang_var = np.convolve(ang_var, np.ones((n,)) / n, mode='valid')
+
+    plt.figure()
+    plt.plot(range(len(ang_var)), ang_var[:], '.')
+    plt.title("ang_var")
+    plt.show()
+
+    # find edge first segment
+    # edge_first_seg = 0
+    # for r in range(len(ang_var) - 1):
+    #     if ang_var[r + 1] >= ang_var[r] + lim:
+    #         edge_first_seg = r
+    #         break
+    # return edge_first_seg + 1
+
+    # mudei pra fazer a convolução dos dois pra eliminar bastante ruido e outliers
+    # ai só retorno a posição do max ang_var
+    # os graficos ficam bem bonitinhos, parece que funciona
+    # tenta incorporar isso no resto da seleção do ext/int/toco, e vamos ver se quebra pra algum slice
+
+    return np.argmax(ang_var)
+
+
 def plot_contours(img, contours, mean_point):
     # Display the image and plot all contours in a array of contours
     fig, ax = plt.subplots()
@@ -280,6 +321,15 @@ def plot_inverted_contours(img, inverted_contours, contours, mean_point):
     figmanager = plt.get_current_fig_manager()
     figmanager.window.showMaximized()
     plt.show()
+
+
+def sample(seg, n):
+    seg = np.array(seg)
+    sseg = []
+    for i in range(0, seg.shape[0], n):
+        sseg.append(seg[i])
+    seg = np.array(sseg)
+    return seg
 
 
 def main():
@@ -404,36 +454,43 @@ def main():
 
         # edge 1
         ext_1 = contour_edge1[0:edge_points_1[1]].copy()
-        if gap_slices[p] == 69:
-            np.savetxt("ext_1_img69.txt", ext_1, delimiter=' ')
         edge_1 = contour_edge1[edge_points_1[1]:edge_points_1[2]+1].copy()
         int_1 = contour_edge1[edge_points_1[2]+1: len(contour_edge1) - 1].copy()
-
-        # # testando eliminar parte de edge nos trechos ext
-        # ang_coef_list = []
-        # for p in range(ext_1.shape[0] - 1):
-        #     ang_coef = (ext_1[p + 1][1] - ext_1[p][1]) / (ext_1[p + 1][0] - ext_1[p][0])
-        #     ang_coef_list += [ang_coef]
-        # # print(str(ang_coef_list))
-        # ang_coef_var = np.zeros(len(ang_coef_list) - 1)
-        # for q in range(len(ang_coef_list) - 1):
-        #     ang_coef_var[q] = abs(ang_coef_list[q] - ang_coef_list[q - 1])
-        # # parametrizar lim usando a linha de base, mediana, algo assim
-        # lim = 0.6
-        # # find edge first segment
-        # for r in range(len(ang_coef_var) - 2):
-        #     if ang_coef_var[r + 1] >= ang_coef_var[r] + lim:
-        #         edge_first_seg = r
-        #         break
-        # plt.plot(range(len(ang_coef_var)), ang_coef_var[:], '.', edge_first_seg, ang_coef_var[edge_first_seg], 'x')
-        # plt.show()
 
         # edge 2
         int_2 = contour_edge2[0:edge_points_2[1]].copy()
         edge_2 = contour_edge2[edge_points_2[1]:edge_points_2[2] + 1].copy()
         ext_2 = contour_edge2[edge_points_2[2] + 1: len(contour_edge2) - 1].copy()
-        if gap_slices[p] == 69:
-            np.savetxt("ext_2_img69.txt", ext_2, delimiter=' ')
+
+        ext_1 = sample(ext_1, 3)
+        ext_2 = sample(ext_2, 3)
+
+        fig, ax = plt.subplots()
+        ax.plot(ext_1[:, 1], ext_1[:, 0], 'b.')
+        ax.plot(ext_2[:, 1], ext_2[:, 0], 'g.')
+        ax.set_xlim([0, 512])
+        ax.set_ylim([0, 512])
+        plt.show()
+
+        fig, ax = plt.subplots()
+        # testando eliminar parte de edge nos trechos ext
+        inf_index1 = find_inflection(ext_1, 15, 5)
+        if inf_index1 > 20:
+            print(str(inf_index1))
+            cut_ext1 = ext_1[0: inf_index1 + 2].copy()
+            ax.plot(cut_ext1[:, 1], cut_ext1[:, 0], 'b-')
+            ext_1 = cut_ext1
+
+        inf_index2 = find_inflection(ext_2[::-1], 15, 5)
+        if inf_index2 > 20:
+            print(str(inf_index2))
+            cut_ext2 = ext_2[inf_index2: len(ext_2) + 1].copy()
+            ax.plot(cut_ext2[:, 1], cut_ext2[:, 0], 'g-')
+            ext_2 = cut_ext2
+
+        ax.set_xlim([0, 512])
+        ax.set_ylim([0, 512])
+        plt.show()
 
         # Performs interpolation to find the gap points
         spline_points = interpolation(ext_1, ext_2, inv_ext, test_contour)
