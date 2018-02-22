@@ -204,6 +204,23 @@ def find_gap_angles(mid_point, test_contour):
     theta_6 = intersect_trough_angles(test_contour, mid_point, theta_5 + 5, theta_5, -0.5)
     # print (str(theta_6))
     gap_angles = [theta_3, theta_6]
+
+    # fig, ax = plt.subplots()
+    # ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=2)  # x and y are switched for correct image plot
+    # rot_matrix = np.array(
+    #     [[np.cos(np.deg2rad(gap_angles[0]-40)), -np.sin(np.deg2rad(gap_angles[0]-40))], [np.sin(np.deg2rad(gap_angles[0]-40)), np.cos(np.deg2rad(gap_angles[0]-40))]])
+    # ref_vec = np.matmul(np.array([1, 0]), rot_matrix)
+    # far_point = mid_point + 300 * ref_vec
+    # ax.plot([mid_point[1], far_point[1]], [mid_point[0], far_point[0]], 'r--')
+    # rot_matrix = np.array(
+    #     [[np.cos(np.deg2rad(gap_angles[1]+40)), -np.sin(np.deg2rad(gap_angles[1]+40))], [np.sin(np.deg2rad(gap_angles[1]+40)), np.cos(np.deg2rad(gap_angles[1]+40))]])
+    # ref_vec = np.matmul(np.array([1, 0]), rot_matrix)
+    # far_point = mid_point + 300 * ref_vec
+    # ax.plot([mid_point[1], far_point[1]], [mid_point[0], far_point[0]], 'b--')
+    # ax.set_xlim([0, 512])
+    # ax.set_ylim([0, 512])
+    # plt.show()
+
     print("  Found gap on contour")
     # gap_angles = [np.deg2rad(theta_3), np.deg2rad(theta_6)]
     return gap_angles
@@ -251,46 +268,6 @@ def interpolation(ext_1, ext_2, inv_ext, test_contour):
     return array
 
 
-def find_inflection(seg, n, lim):
-    ang_list = []
-    for p in range(seg.shape[0]-1):
-        ang = math.atan2((seg[p + 1][0] - seg[p][0]), (seg[p + 1][1] - seg[p][1]))
-        ang_list += [np.rad2deg(ang)]
-
-    ang_list = np.convolve(ang_list, np.ones((n,)) / n, mode='valid')
-
-    plt.figure()
-    plt.plot(range(len(ang_list)), ang_list[:], '.')
-    plt.title("ang_list")
-    plt.show()
-
-    ang_var = np.zeros(len(ang_list) - 1)
-    for q in range(len(ang_list) - 1):
-        ang_var[q] = abs(ang_list[q+1] - ang_list[q])
-
-    ang_var = np.convolve(ang_var, np.ones((n,)) / n, mode='valid')
-
-    plt.figure()
-    plt.plot(range(len(ang_var)), ang_var[:], '.')
-    plt.title("ang_var")
-    plt.show()
-
-    # find edge first segment
-    # edge_first_seg = 0
-    # for r in range(len(ang_var) - 1):
-    #     if ang_var[r + 1] >= ang_var[r] + lim:
-    #         edge_first_seg = r
-    #         break
-    # return edge_first_seg + 1
-
-    # mudei pra fazer a convolução dos dois pra eliminar bastante ruido e outliers
-    # ai só retorno a posição do max ang_var
-    # os graficos ficam bem bonitinhos, parece que funciona
-    # tenta incorporar isso no resto da seleção do ext/int/toco, e vamos ver se quebra pra algum slice
-
-    return np.argmax(ang_var)
-
-
 def plot_contours(img, contours, mean_point):
     # Display the image and plot all contours in a array of contours
     fig, ax = plt.subplots()
@@ -321,15 +298,6 @@ def plot_inverted_contours(img, inverted_contours, contours, mean_point):
     figmanager = plt.get_current_fig_manager()
     figmanager.window.showMaximized()
     plt.show()
-
-
-def sample(seg, n):
-    seg = np.array(seg)
-    sseg = []
-    for i in range(0, seg.shape[0], n):
-        sseg.append(seg[i])
-    seg = np.array(sseg)
-    return seg
 
 
 def main():
@@ -393,11 +361,11 @@ def main():
     # ax = Axes3D(fig)
     # hmpa = np.asarray(healthy_mean_points)
     # gmpa = np.asarray(gap_mean_points)
-    # ax.scatter(hmpa[:, 0], hmpa[:, 1], hmpa[:, 2])
+    # ax.scatter(hmpa[:, 0], hmpa[:, 1], hmpa[:, 2], c='green')
     # ax.scatter(gmpa[:, 0], gmpa[:, 1], gmpa[:, 2], c='red')
     # for k in range(num_images):
     #     for contour in contours_list[k]:
-    #         ax.plot(contour[:, 0], contour[:, 1], k, linewidth=1)
+    #         ax.plot(contour[:, 0], contour[:, 1], k, 'y-', alpha=0.1)
     # ax.set_xlim3d(0, 512)
     # ax.set_ylim3d(0, 512)
     # ax.set_zlim3d(0, num_images)
@@ -449,8 +417,9 @@ def main():
 
         # contour_edge_1: amarelo, 1os ptos são externos
         # contour_edge_2: magenta, 1os ptos são internos
-        edge_points_1 = intersect_contour(contour_edge1, mid_point, gap_angles[0] - 5)
-        edge_points_2 = intersect_contour(contour_edge2, mid_point, gap_angles[1] + 5)
+        edge_ang = 0.0012*(p**2)+4.881
+        edge_points_1 = intersect_contour(contour_edge1, mid_point, gap_angles[0] - edge_ang)
+        edge_points_2 = intersect_contour(contour_edge2, mid_point, gap_angles[1] + edge_ang)
 
         # edge 1
         ext_1 = contour_edge1[0:edge_points_1[1]].copy()
@@ -462,35 +431,17 @@ def main():
         edge_2 = contour_edge2[edge_points_2[1]:edge_points_2[2] + 1].copy()
         ext_2 = contour_edge2[edge_points_2[2] + 1: len(contour_edge2) - 1].copy()
 
-        ext_1 = sample(ext_1, 3)
-        ext_2 = sample(ext_2, 3)
-
-        fig, ax = plt.subplots()
-        ax.plot(ext_1[:, 1], ext_1[:, 0], 'b.')
-        ax.plot(ext_2[:, 1], ext_2[:, 0], 'g.')
-        ax.set_xlim([0, 512])
-        ax.set_ylim([0, 512])
-        plt.show()
-
-        fig, ax = plt.subplots()
-        # testando eliminar parte de edge nos trechos ext
-        inf_index1 = find_inflection(ext_1, 15, 5)
-        if inf_index1 > 20:
-            print(str(inf_index1))
-            cut_ext1 = ext_1[0: inf_index1 + 2].copy()
-            ax.plot(cut_ext1[:, 1], cut_ext1[:, 0], 'b-')
-            ext_1 = cut_ext1
-
-        inf_index2 = find_inflection(ext_2[::-1], 15, 5)
-        if inf_index2 > 20:
-            print(str(inf_index2))
-            cut_ext2 = ext_2[inf_index2: len(ext_2) + 1].copy()
-            ax.plot(cut_ext2[:, 1], cut_ext2[:, 0], 'g-')
-            ext_2 = cut_ext2
-
-        ax.set_xlim([0, 512])
-        ax.set_ylim([0, 512])
-        plt.show()
+        # fig, ax = plt.subplots()
+        # ax.plot(test_contour[:, 1], test_contour[:, 0], linewidth=1)  # x and y are switched for correct image plot
+        # ax.plot(ext_1[:, 1], ext_1[:, 0], 'y.')
+        # ax.plot(edge_1[:, 1], edge_1[:, 0], 'g.')
+        # ax.plot(int_1[:, 1], int_1[:, 0], 'm.')
+        # ax.plot(ext_2[:, 1], ext_2[:, 0], 'y-')
+        # ax.plot(edge_2[:, 1], edge_2[:, 0], 'g-')
+        # ax.plot(int_2[:, 1], int_2[:, 0], 'm-')
+        # ax.set_xlim([0, 512])
+        # ax.set_ylim([0, 512])
+        # plt.show()
 
         # Performs interpolation to find the gap points
         spline_points = interpolation(ext_1, ext_2, inv_ext, test_contour)
@@ -499,19 +450,19 @@ def main():
         splines_list[p] = np.array(spline_points)
     print("Splines done")
 
-    # fig = plt.figure()
-    # ax = Axes3D(fig)
-    # for q in range(num_images):
-    #     for contour in contours_list[q]:
-    #         ax.plot(contour[:, 0], contour[:, 1], q, 'b-')
-    # for r in range(len(gap_slices)):
-    #     if splines_list[r] is not None:
-    #         ax.plot(splines_list[r][:, 0], splines_list[r][:, 1], gap_slices[r], 'r-')
-    # ax.set_xlim3d(0, 512)
-    # ax.set_ylim3d(0, 512)
-    # ax.set_zlim3d(0, num_images)
-    # plt.axis('scaled')
-    # plt.show()
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    for q in range(num_images):
+        for contour in contours_list[q]:
+            ax.plot(contour[:, 0], contour[:, 1], q, 'b-', alpha=0.3)
+    for r in range(len(gap_slices)):
+        if splines_list[r] is not None:
+            ax.plot(splines_list[r][:, 0], splines_list[r][:, 1], gap_slices[r], 'r-')
+    ax.set_xlim3d(0, 512)
+    ax.set_ylim3d(0, 512)
+    ax.set_zlim3d(0, num_images)
+    plt.axis('scaled')
+    plt.show()
 
 if __name__ == '__main__':
     main()
