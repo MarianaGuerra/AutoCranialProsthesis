@@ -51,7 +51,7 @@ def select_contours(img):
 def calculate_line_from_points(mpr):
     """
     Calculates point and direction to define a line on 3D coordinate space based on array of points via single value
-    decompostion (SVD)
+    decomposition (SVD)
     :param mpr: ndarray of points to them the line will fit
     :return: 3D ndarray vector that defines the line; 3D ndarray point on line 
     """
@@ -226,25 +226,24 @@ def find_gap_angles(mid_point, test_contour):
     return gap_angles
 
 
-def interpolation(ext_1, ext_2, inv_ext, test_contour):
-    spline_points_number = inv_ext.shape[0]
+def interpolation(ext_1, ext_2, spline_points_number, border_1, border_2, test_contour):
     ss = []
     xs = []
     ys = []
     # calcular as posições dos pontos de ext1 e ext2 dentro desse n
     # amostragem apenas a partir de 10 pontos de distância da extremidade da falha
     # calcular fx, fy, snew (apenas entre os 3 pontos amostra extremos da falha)
-    for i in range(10, ext_1.shape[0] - 10, 10):
+    for i in range(border_1, ext_1.shape[0] - 10, 10):
         ss += [i]
         xs.append(ext_1[i, 1])
         ys.append(ext_1[i, 0])
-    for j in range(spline_points_number - ext_2.shape[0] + 10, spline_points_number - 10, 10):
+    for j in range(spline_points_number - ext_2.shape[0] + border_2, spline_points_number - 10, 10):
         ss += [j]
         xs.append(ext_2[j - (spline_points_number - ext_2.shape[0]), 1])
         ys.append(ext_2[j - (spline_points_number - ext_2.shape[0]), 0])
     fx = interp1d(ss, xs, kind='quadratic')
     fy = interp1d(ss, ys, kind='quadratic')
-    snew = np.linspace(ext_1.shape[0] - 40, spline_points_number - ext_2.shape[0] + 40 - 1, num=j, endpoint=True)
+    snew = np.linspace(ext_1.shape[0] - 20, spline_points_number - ext_2.shape[0] + 20 - 1, num=j, endpoint=True)
     # calcular fx(snew), fy(snew)
     # plt.plot(ss, xs, 'o', snew, fx(snew), '-')
     # plt.plot(ss, ys, 'o', snew, fy(snew), '-')
@@ -256,12 +255,10 @@ def interpolation(ext_1, ext_2, inv_ext, test_contour):
     array[:, 0] = fy(snew)
 
     # fig, ax = plt.subplots()
-    # # ax.plot(gap_points[:, 1], gap_points[:, 0], 'm.')
     # ax.plot(test_contour[:, 1], test_contour[:, 0], 'm-')
     # ax.plot(ext_1[:, 1], ext_1[:, 0], 'b-')
     # ax.plot(ext_2[:, 1], ext_2[:, 0], 'b-')
     # ax.plot(array[:, 1], array[:, 0], 'g-')
-    # # ax.plot(points_inv_rot[:, 1], points_inv_rot[:, 0], 'b-')
     # ax.set_xlim([0, 512])
     # ax.set_ylim([0, 512])
     # plt.show()
@@ -303,7 +300,8 @@ def plot_inverted_contours(img, inverted_contours, contours, mean_point):
 def main():
     # datasets = load_dicom_folder(r"C:\Users\Escritorio\Dropbox\USP\Projeto Mariana\TestSeries\JLL")
     datasets = load_dicom_folder(r"C:\Users\Escritorio\Dropbox\USP\Projeto Mariana\TestSeries\nic2")  # Nic
-    # datasets = load_dicom_folder(r"C:\Users\Escritorio\Dropbox\USP\Projeto Mariana\TestSeries\D10A2878") #Darci
+    # datasets = load_dicom_folder(r"C:\Users\Escritorio\Dropbox\USP\Projeto Mariana\TestSeries\D10A2878") # Darci
+    # Luis EDL
     series_arr, _ = dicom_datasets_to_numpy(datasets)
     num_images = series_arr.shape[2]
     contours_list = [None] * num_images  # list of all contours of all slices
@@ -389,6 +387,8 @@ def main():
     for p in range(len(gap_slices)):
         print("Contour of image " + str(gap_slices[p]))
         test_contour = contours_list[gap_slices[p]][0][:, :2]
+        if gap_slices[p] == 69:
+            np.savetxt("contour_img69.txt", test_contour, delimiter=' ')
         mid_point = contours_mean_point_list[gap_slices[p]][0:2]
         # plot_contours(series_arr[:, :, gap_slices[p]], contours_list[gap_slices[p]], mid_point)
         gap_angles = find_gap_angles(mid_point, test_contour)
@@ -406,6 +406,8 @@ def main():
         cut_points_a = intersect_contour(inv_test_contour, mid_point, cut_angle_a)
         cut_points_b = intersect_contour(inv_test_contour, mid_point, cut_angle_b)
         inv_ext = inv_test_contour[cut_points_b[0]:cut_points_a[1]].copy()
+        if gap_slices[p] == 69:
+            np.savetxt("inv_ext_img69.txt", inv_ext, delimiter=' ')
         inv_int = inv_test_contour[cut_points_a[2]:cut_points_b[3]].copy()
 
         # Separates contour in parts: internal, external, gap edges
@@ -444,7 +446,10 @@ def main():
         # plt.show()
 
         # Performs interpolation to find the gap points
-        spline_points = interpolation(ext_1, ext_2, inv_ext, test_contour)
+        spline_points_number = inv_ext.shape[0]
+        border_1 = 10
+        border_2 = 10
+        spline_points = interpolation(ext_1, ext_2, spline_points_number, border_1, border_2, test_contour)
 
         # colocar esse array em estrutura (lista) com número de slices com falha no slice correspondente
         splines_list[p] = np.array(spline_points)
