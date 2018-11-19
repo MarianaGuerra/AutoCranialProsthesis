@@ -2,3 +2,8 @@
 *.pyc
 __pycache__/*
 *.whl
+/ext_1_img59.txt
+/ext_1_img69.txt
+/ext_2_img59.txt
+/ext_2_img69.txt
+/venv/*

@@ -9,9 +9,6 @@ from scipy.spatial import distance
 import matplotlib.pyplot as plt
 import copy
 from scipy.interpolate import interp1d
-import math
-import scipy.interpolate as si
-import random
 from mpl_toolkits.mplot3d import Axes3D
 
 
@@ -299,7 +296,7 @@ def plot_inverted_contours(img, inverted_contours, contours, mean_point):
 
 def main():
     # datasets = load_dicom_folder(r"C:\Users\Escritorio\Dropbox\USP\Projeto Mariana\TestSeries\JLL")
-    datasets = load_dicom_folder(r"C:\Users\Escritorio\Dropbox\USP\Projeto Mariana\TestSeries\nic2")  # Nic
+    datasets = load_dicom_folder(r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\nic2")  # Nic
     # datasets = load_dicom_folder(r"C:\Users\Escritorio\Dropbox\USP\Projeto Mariana\TestSeries\D10A2878") # Darci
     # Luis EDL
     series_arr, _ = dicom_datasets_to_numpy(datasets)
@@ -355,20 +352,20 @@ def main():
 
     # Plots in blue central contour points of healthy slices (ref points for axial axis), plots in red central contour
     # points calculated for bone missing slices, plots all contours from contours_list
-    # fig = plt.figure()
-    # ax = Axes3D(fig)
+    fig = plt.figure()
+    ax = Axes3D(fig)
     # hmpa = np.asarray(healthy_mean_points)
     # gmpa = np.asarray(gap_mean_points)
     # ax.scatter(hmpa[:, 0], hmpa[:, 1], hmpa[:, 2], c='green')
     # ax.scatter(gmpa[:, 0], gmpa[:, 1], gmpa[:, 2], c='red')
-    # for k in range(num_images):
-    #     for contour in contours_list[k]:
-    #         ax.plot(contour[:, 0], contour[:, 1], k, 'y-', alpha=0.1)
-    # ax.set_xlim3d(0, 512)
-    # ax.set_ylim3d(0, 512)
-    # ax.set_zlim3d(0, num_images)
-    # plt.axis('scaled')
-    # plt.show()
+    for k in range(num_images):
+        for contour in contours_list[k]:
+            ax.plot(contour[:, 0], contour[:, 1], k, 'b.', alpha=0.1)
+    ax.set_xlim3d(0, 512)
+    ax.set_ylim3d(0, 512)
+    ax.set_zlim3d(0, num_images)
+    plt.axis('scaled')
+    plt.show()
 
     # Inverts contours
     inverted_contours_list = copy.deepcopy(contours_list)
@@ -468,6 +465,7 @@ def main():
     ax.set_zlim3d(0, num_images)
     plt.axis('scaled')
     plt.show()
+
 
 if __name__ == '__main__':
     main()

@@ -1,0 +1,29 @@
+c_falha_mirror = np.concatenate((c_falha[:, :], c_mirror[:, :]), axis=0)
+    cfmx = copy.deepcopy(c_falha_mirror)
+    cfmy = copy.deepcopy(c_falha_mirror)
+    for m in range(c_falha_mirror.shape[0]):
+        cfmx[m][0] = m
+        cfmx[m][1] = c_falha_mirror[m][0]
+        cfmy[m][0] = m
+        cfmy[m][1] = c_falha_mirror[m][1]
+
+    zx = np.polyfit(cfmx[:, 0], cfmx[:, 1], 4)
+    x = np.arange(cfmx[0, 0], cfmx[cfmx.shape[0]-1, 0], 0.1)
+    estx = np.polyval(zx, x)
+    zy = np.polyfit(cfmy[:, 0], cfmy[:, 1], 4)
+    esty = np.polyval(zy, x)
+
+    #fig, ax = plt.subplots()
+    # ax.plot(c[:, 0], c[:, 1], 'b-')
+    # ax.plot(c_mirror[:, 0], c_mirror[:, 1], 'g-')
+    # ax.plot(c_falha_mirror[:, 0], c_falha_mirror[:, 1], 'go', markersize=1)
+    #ax.plot(cfmx[:, 0], cfmx[:, 1], 'go', markersize=1)
+    #ax.plot(x, estx, 'b-')
+
+    # ax.plot(c_falha[0:400, 0], c_falha[0:400, 1], 'mo', markersize=1)
+    # ax.plot(c_mirror[700:c_mirror.shape[0], 0], c_mirror[700:c_mirror.shape[0], 1], 'bo', markersize=1)
+    # ax.plot(c_falha[0:ptos, 0], c_falha[0:ptos, 1], 'go', markersize=1)
+    # ax.plot(x, est, 'k-')
+    fig, ax = plt.subplots()
+    #ax.plot(cfmy[:, 0], cfmy[:, 1], 'bo', markersize=1)
+    #ax.plot(x, esty, 'g-')
