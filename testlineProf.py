@@ -13,15 +13,15 @@ def main():
     # z_gs = np.polyfit(c[ini_falha:end_falha, 0], c[ini_falha:end_falha, 1], 4)
     # print("Coeficientes GS: " + str(z_gs))
     c_falha = np.concatenate((c[0:ini_falha, :], c[end_falha:c.shape[0], :]), axis=0)
-    fig, ax = plt.subplots()
-    ax.plot(c_falha[:, 0], c_falha[:, 1], 'mo', markersize=1)
-    ax.plot(c_falha[:, 0], -1*c_falha[:, 1], 'bo', markersize=1)
-    ax.set_xlim([0, 512])
-    ax.set_ylim([-512, 512])
-    plt.show()
+    # fig, ax = plt.subplots()
+    # ax.plot(c_falha[:, 0], c_falha[:, 1], 'mo', markersize=1)
+    # ax.plot(c_falha[:, 0], -1*c_falha[:, 1], 'bo', markersize=1)
+    # ax.set_xlim([0, 512])
+    # ax.set_ylim([-512, 512])
+    # plt.show()
 
     c_falha_sample = []
-    sample = 20
+    sample = 100
     for n in range(0, c_falha.shape[0]-sample, sample):
         c_falha_sample.append(c_falha[n])
     c_falha_sample = np.asarray(c_falha_sample)
@@ -43,18 +43,22 @@ def main():
     #     c_mirror.append(point)
     # c_mirror = np.asarray(c_mirror)
 
-    # ptos = c_falha.shape[0]/2
-    # c_falha_mirror = np.concatenate((c_falha[0:ptos, :], c_falha[0:ptos, :], c_mirror[(c_mirror.shape[0]/2):c_mirror.shape[0], :]), axis=0)
-    # z = np.polyfit(c_falha_mirror[:, 0], c_falha_mirror[:, 1], 4)
-    # print("Coeficientes: " + str(z))
-    # #x = np.arange(c_falha[ptos, 0], c_falha[0, 0], 0.01)
-    # x = np.arange(150, 450, 0.01)
-    # est = np.polyval(z, x)
+    ptos = c_falha.shape[0]/2
+    c_falha_mirror = np.concatenate((c_falha[0:ptos, :], c_falha[0:ptos, :], c_mirror[(c_mirror.shape[0]/2):c_mirror.shape[0], :]), axis=0)
+    z = np.polyfit(c_falha_mirror[:, 0], c_falha_mirror[:, 1], 4)
+    print("Coeficientes: " + str(z))
+    # x = np.arange(c_falha[ptos, 0], c_falha[0, 0], 0.01)
+    x = np.arange(150, 450, 0.01)
+    est = np.polyval(z, x)
     # est_gs = np.polyval(z_gs, x)
+
+    # np.savetxt("cfalhacimg05.txt", c_falha, delimiter=' ')
+    # np.savetxt("cmirrorcimg05.txt", c_mirror, delimiter=' ')
 
     fig, ax = plt.subplots()
     ax.plot(c_falha[:, 0], c_falha[:, 1], 'mo', markersize=1)
     ax.plot(c_mirror[:, 0], c_mirror[:, 1], 'bo', markersize=1)
+    ax.plot(c_falha_sample[:, 0], c_falha_sample[:, 1], 'gx', markersize=12)
     # ax.plot(c_falha[0:c_falha.shape[0]/2, 0], c_falha[0:c_falha.shape[0]/2, 1], 'bo', markersize=1)
     # ax.plot(c_mirror[(c_mirror.shape[0]/2):c_mirror.shape[0], 0], c_mirror[(c_mirror.shape[0]/2):c_mirror.shape[0], 1], 'go', markersize=1)
     # ax.plot(c_falha_mirror[:, 0], c_falha_mirror[:, 1], 'go', markersize=1)
@@ -67,7 +71,7 @@ def main():
     # ax.plot(c_mirror[400, 0], c_mirror[400, 1], 'gx')
     # ax.plot(c10[1, 0], c10[1, 1], 'bx')
     ax.set_xlim([0, 512])
-    ax.set_ylim([-512, 512])
+    ax.set_ylim([0, 512])
     plt.show()
 
 

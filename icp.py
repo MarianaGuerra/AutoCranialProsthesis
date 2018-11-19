@@ -169,8 +169,8 @@ def main():
     # side_a = np.loadtxt("a_cont40.txt", delimiter=' ')
     # side_b = np.loadtxt("b_mirror_cont40.txt", delimiter=' ')
 
-    side_a = np.loadtxt("a_cont2.txt", delimiter=' ')
-    side_b = np.loadtxt("b_mirror_cont2.txt", delimiter=' ')
+    side_a = np.loadtxt("cfalhacimg05.txt", delimiter=' ')
+    side_b = np.loadtxt("cmirrorcimg05.txt", delimiter=' ')
 
     # side_a += [100, 0]
 
