@@ -221,7 +221,7 @@ def find_eval_region(hemi_phantom):
                 ini_gap = n
                 end_gap = n + 1
 
-        region_size = 10
+        region_size = 20
         ini_eval = 0
         for n in range(ini_gap, 0, -1):
             point = data[n]
@@ -239,8 +239,8 @@ def find_eval_region(hemi_phantom):
                 break
 
         dif = np.abs(data[end_gap, 0] - data[ini_gap, 0])
-        # eval_indexes[i] = (ini_eval, end_eval, dif, ini_gap, end_gap)
-        eval_indexes[i] = (data[ini_eval, 0], data[ini_eval, 1], data[end_eval, 0], data[end_eval, 0], dif)
+        eval_indexes[i] = (ini_eval, end_eval, dif, ini_gap, end_gap)
+        # eval_indexes[i] = (data[ini_eval, 0], data[ini_eval, 1], data[end_eval, 0], data[end_eval, 1], dif, ini_eval, end_eval)
 
         # plt.plot(data[ini_eval, 0], data[ini_eval, 1], 'bx', markersize=10)
         # plt.plot(data[end_eval, 0], data[end_eval, 1], 'gx', markersize=10)
@@ -253,17 +253,6 @@ def find_eval_region(hemi_phantom):
         # plt.title(str(i))
         # plt.show()
 
-        plt.plot(data[ini_eval, 0], data[ini_eval, 1], 'bx', markersize=10)
-        plt.plot(data[end_eval, 0], data[end_eval, 1], 'gx', markersize=10)
-        plt.plot(data[ini_gap, 0], data[ini_gap, 1], 'mx', markersize=10)
-        plt.plot(data[end_gap, 0], data[end_gap, 1], 'rx', markersize=10)
-        plt.plot(data[:, 0], data[:, 1], 'bo', markersize=1)
-        plt.plot(hemi_phantom[i][:, 0], hemi_phantom[i][:, 1], 'mx', markersize=1)
-        plt.xlabel('X (mm)')
-        plt.ylabel('Y (mm)')
-        plt.title(str(i))
-        plt.show()
-
     return eval_indexes
 
 
@@ -275,7 +264,9 @@ def calculate_remq(squared_dist_list):
 
 
 def tests(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, eval_indexes, c, r):
+
     num_images = len(hemi_gold_standard)
+    result = [None] * num_images
     eval_indexes = np.asarray(eval_indexes)
     remq_a = []
     remq_b = []
@@ -289,18 +280,22 @@ def tests(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, eval_indexes,
 
     for i in range(num_images):
 
-        if eval_indexes[i][4] > 1:  # contours with this low difference does not have a gap // era 2
+        if eval_indexes[i][2] > 1:  # contours with this low difference does not have a gap // era 2
 
             count_num_gap_img += 1
 
             gs = np.asarray(hemi_gold_standard[i])
             phantom = np.asarray(hemi_phantom[i])
             m_phantom = np.asarray(hemi_mirrored_phantom[i])
+            # ini_eval_x = float(eval_indexes[i][0])
+            # ini_eval_y = float(eval_indexes[i][1])
+            # end_eval_x = float(eval_indexes[i][2])
+            # end_eval_y = float(eval_indexes[i][3])
             ini_eval = int(eval_indexes[i][0])
             end_eval = int(eval_indexes[i][1])
 
             # Finds eval region on gold standard by looking for the points with same x and y coordinates as ini_eval
-            # and end_eval. Since phantom came from the gold standard, it is possible to have a perfect match.
+            # and end_eval. Since the phantom came from the gold standard, it is possible to have a perfect match.
             seg_gs_ini = 0
             seg_gs_end = 0
             for n in range(0, gs.shape[0]):
@@ -309,6 +304,12 @@ def tests(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, eval_indexes,
                     seg_gs_ini = n
                 if point[0] == phantom[end_eval, 0] and point[1] == phantom[end_eval, 1]:
                     seg_gs_end = n
+            # for n in range(0, gs.shape[0]):
+            #     point = gs[n]
+            #     if point[0] == ini_eval_x and point[1] == ini_eval_y:
+            #         seg_gs_ini = n
+            #     if point[0] == end_eval_x and point[1] == end_eval_y:
+            #         seg_gs_end = n
 
             # Finds eval region on mirrored phantom by looking for the points with x coordinate within 1 mm to ini_eval
             # and end_eval. It is not possible to find a perfect match.
@@ -316,10 +317,16 @@ def tests(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, eval_indexes,
             seg_mirror_end = 0
             for n in range(0, m_phantom.shape[0]):
                 point = m_phantom[n]
-                if phantom[ini_eval, 0] - 1 <= point[0] >= phantom[ini_eval, 0] + 1:
+                if phantom[ini_eval, 0] - 0.5 <= point[0] >= phantom[ini_eval, 0] + 0.5:
                     seg_mirror_ini = n
-                if phantom[end_eval, 0] - 1 <= point[0] >= phantom[end_eval, 0] + 1:
+                if phantom[end_eval, 0] - 0.5 <= point[0] >= phantom[end_eval, 0] + 0.5:
                     seg_mirror_end = n
+            # for n in range(0, m_phantom.shape[0]):
+            #     point = m_phantom[n]
+            #     if ini_eval_x - 0.5 <= point[0] >= ini_eval_x + 0.5:
+            #         seg_mirror_ini = n
+            #     if end_eval_x - 0.5 <= point[0] >= end_eval_x + 0.5:
+            #         seg_mirror_end = n
 
             # Cuting the segments based on the found indexes for each case.
             if seg_mirror_end > seg_mirror_ini:
@@ -333,8 +340,8 @@ def tests(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, eval_indexes,
 
             # plt.plot(phantom[ini_eval, 0], phantom[ini_eval, 1], 'bx', markersize=10)
             # plt.plot(phantom[end_eval, 0], phantom[end_eval, 1], 'gx', markersize=10)
-            # # plt.plot(seg_gs[:, 0], seg_gs[:, 1], 'bo', markersize=1)
-            # plt.plot(seg_m_phantom[:, 0], seg_m_phantom[:, 1], 'go', markersize=3)
+            # plt.plot(seg_gs[:, 0], seg_gs[:, 1], 'bo', markersize=1)
+            # plt.plot(seg_m_phantom[:, 0], seg_m_phantom[:, 1], 'go', markersize=1)
             # plt.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'mx', markersize=1)
             # plt.xlabel('X (mm)')
             # plt.ylabel('Y (mm)')
@@ -348,6 +355,7 @@ def tests(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, eval_indexes,
             x = np.arange(seg_phantom[0, 0], seg_phantom[len(seg_phantom)-1, 0], ptos)
             est = np.polyval(z, x)  # avaliação do polinomio em x
             pred = np.vstack((x, est)).T  # organização do valor de cada ponto do polinômio (y) no respectivo x
+            result[i] = pred
             # REMQ e Hausdorff
             min_dist_list = []
             for j in range(pred.shape[0]):
@@ -378,124 +386,124 @@ def tests(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, eval_indexes,
             # ax2.set_aspect('equal')
             # plt.show()
 
-            # Teste B - Segmento do contorno com falha (phantom) + segmento do contorno espelhado (m_phantom)
-            # Create dataset based on seg_phantom e seg_m_phantom
-            data_b = np.concatenate((seg_phantom[:, :], seg_m_phantom[:, :]), axis=0)
-            # Create polynomial based on data_b
-            z = np.polyfit(data_b[:, 0], data_b[:, 1], 4)  # polinomio
-            ptos = 0.2  # resolução em x
-            x = np.arange(seg_phantom[0, 0], seg_phantom[len(seg_phantom) - 1, 0], ptos)
-            est = np.polyval(z, x)  # avaliação do polinomio em x
-            pred = np.vstack((x, est)).T  # organização do valor de cada ponto do polinômio (y) no respectivo x
-            # REMQ e Hausdorff
-            min_dist_list = []
-            for j in range(pred.shape[0]):
-                pred_p = pred[j]
-                min_dist = 100
-                for k in range(seg_gs.shape[0]):
-                    gs_p = seg_gs[k, 0:2]
-                    dist = np.sqrt((pred_p[0] - gs_p[0]) ** 2 + (pred_p[1] - gs_p[1]) ** 2)
-                    if dist <= min_dist:
-                        min_dist = dist
-                min_dist_list.append(min_dist)
-            h = np.amax(np.asarray(min_dist_list))
-            squared_dist_list = np.asarray(min_dist_list) ** 2
-            remq = calculate_remq(squared_dist_list)
-            remq_b.append(remq)
-            h_b.append(h)
-
-            # fig, (ax1, ax2) = plt.subplots(1, 2)
-            # ax2.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
-            # ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'ro', markersize=1)
-            # ax1.plot(seg_m_phantom[:, 0], seg_m_phantom[:, 1], 'go', markersize=1)
-            # ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'ro', markersize=1)
-            # ax1.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
-            # ax2.set(xlabel='X (mm)', ylabel='Y (mm)')
-            # ax1.set(xlabel='X (mm)', ylabel='Y (mm)')
-            # fig.suptitle("Teste B - Image " + str(i))
-            # ax1.set_aspect('equal')
-            # ax2.set_aspect('equal')
-            # plt.show()
-
-            # Teste C - Segmento do contorno com falha (phantom) com peso 2 + segmento do contorno espelhado (m_phantom)
-            # Create dataset based on seg_phantom e seg_m_phantom
-            data_c = np.concatenate((seg_phantom[:, :], seg_phantom[:, :], seg_m_phantom[:, :]), axis=0)  # mudar
-            # Create polynomial based on data_c
-            z = np.polyfit(data_c[:, 0], data_c[:, 1], 4)  # polinomio
-            ptos = 0.2  # resolução em x
-            x = np.arange(seg_phantom[0, 0], seg_phantom[len(seg_phantom) - 1, 0], ptos)  # manter sempre
-            est = np.polyval(z, x)  # avaliação do polinomio em x
-            pred = np.vstack((x, est)).T  # organização do valor de cada ponto do polinômio (y) no respectivo x
-            # REMQ e Hausdorff
-            min_dist_list = []
-            for j in range(pred.shape[0]):
-                pred_p = pred[j]
-                min_dist = 100
-                for k in range(seg_gs.shape[0]):
-                    gs_p = seg_gs[k, 0:2]
-                    dist = np.sqrt((pred_p[0] - gs_p[0]) ** 2 + (pred_p[1] - gs_p[1]) ** 2)
-                    if dist <= min_dist:
-                        min_dist = dist
-                min_dist_list.append(min_dist)
-            h = np.amax(np.asarray(min_dist_list))
-            squared_dist_list = np.asarray(min_dist_list) ** 2
-            remq = calculate_remq(squared_dist_list)
-            remq_c.append(remq)  # atenção mudar
-            h_c.append(h)  # atenção mudar
-
-            # fig, (ax1, ax2) = plt.subplots(1, 2)
-            # ax2.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
-            # ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'ro', markersize=1)
-            # ax1.plot(seg_m_phantom[:, 0], seg_m_phantom[:, 1], 'go', markersize=1)
-            # ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'ro', markersize=1)
-            # ax1.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
-            # ax2.set(xlabel='X (mm)', ylabel='Y (mm)')
-            # ax1.set(xlabel='X (mm)', ylabel='Y (mm)')
-            # fig.suptitle("Teste C - Image " + str(i))
-            # ax1.set_aspect('equal')
-            # ax2.set_aspect('equal')
-            # plt.show()
-
-            # Teste D - Segmento do contorno com falha (phantom) + segmento do contorno espelhado (m_phantom) com peso 2
-            # Create dataset based on seg_phantom e seg_m_phantom
-            data_d = np.concatenate((seg_phantom[:, :], seg_m_phantom[:, :], seg_m_phantom[:, :]), axis=0)
-            # Create polynomial based on data_d
-            z = np.polyfit(data_d[:, 0], data_d[:, 1], 4)  # polinomio
-            ptos = 0.2  # resolução em x
-            x = np.arange(seg_phantom[0, 0], seg_phantom[len(seg_phantom) - 1, 0], ptos)
-            est = np.polyval(z, x)  # avaliação do polinomio em x
-            pred = np.vstack((x, est)).T  # organização do valor de cada ponto do polinômio (y) no respectivo x
-            # REMQ e Hausdorff
-            min_dist_list = []
-            for j in range(pred.shape[0]):
-                pred_p = pred[j]
-                min_dist = 100
-                for k in range(seg_gs.shape[0]):
-                    gs_p = seg_gs[k, 0:2]
-                    dist = np.sqrt((pred_p[0] - gs_p[0]) ** 2 + (pred_p[1] - gs_p[1]) ** 2)
-                    if dist <= min_dist:
-                        min_dist = dist
-                min_dist_list.append(min_dist)
-            h = np.amax(np.asarray(min_dist_list))
-            squared_dist_list = np.asarray(min_dist_list) ** 2
-            remq = calculate_remq(squared_dist_list)
-            remq_d.append(remq)
-            h_d.append(h)
-
-            # fig, (ax1, ax2) = plt.subplots(1, 2)
-            # ax2.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
-            # ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'ro', markersize=1)
-            # ax1.plot(seg_m_phantom[:, 0], seg_m_phantom[:, 1], 'go', markersize=1)
-            # ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'ro', markersize=1)
-            # ax1.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
-            # ax2.set(xlabel='X (mm)', ylabel='Y (mm)')
-            # ax1.set(xlabel='X (mm)', ylabel='Y (mm)')
-            # fig.suptitle("Teste D - Image " + str(i))
-            # ax1.set_aspect('equal')
-            # ax2.set_aspect('equal')
-            # plt.show()
-
-    # Writes results to file
+    #         # Teste B - Segmento do contorno com falha (phantom) + segmento do contorno espelhado (m_phantom)
+    #         # Create dataset based on seg_phantom e seg_m_phantom
+    #         data_b = np.concatenate((seg_phantom[:, :], seg_m_phantom[:, :]), axis=0)
+    #         # Create polynomial based on data_b
+    #         z = np.polyfit(data_b[:, 0], data_b[:, 1], 4)  # polinomio
+    #         ptos = 0.2  # resolução em x
+    #         x = np.arange(seg_phantom[0, 0], seg_phantom[len(seg_phantom) - 1, 0], ptos)
+    #         est = np.polyval(z, x)  # avaliação do polinomio em x
+    #         pred = np.vstack((x, est)).T  # organização do valor de cada ponto do polinômio (y) no respectivo x
+    #         # REMQ e Hausdorff
+    #         min_dist_list = []
+    #         for j in range(pred.shape[0]):
+    #             pred_p = pred[j]
+    #             min_dist = 100
+    #             for k in range(seg_gs.shape[0]):
+    #                 gs_p = seg_gs[k, 0:2]
+    #                 dist = np.sqrt((pred_p[0] - gs_p[0]) ** 2 + (pred_p[1] - gs_p[1]) ** 2)
+    #                 if dist <= min_dist:
+    #                     min_dist = dist
+    #             min_dist_list.append(min_dist)
+    #         h = np.amax(np.asarray(min_dist_list))
+    #         squared_dist_list = np.asarray(min_dist_list) ** 2
+    #         remq = calculate_remq(squared_dist_list)
+    #         remq_b.append(remq)
+    #         h_b.append(h)
+    #
+    #         # fig, (ax1, ax2) = plt.subplots(1, 2)
+    #         # ax2.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
+    #         # ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'ro', markersize=1)
+    #         # ax1.plot(seg_m_phantom[:, 0], seg_m_phantom[:, 1], 'go', markersize=1)
+    #         # ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'ro', markersize=1)
+    #         # ax1.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
+    #         # ax2.set(xlabel='X (mm)', ylabel='Y (mm)')
+    #         # ax1.set(xlabel='X (mm)', ylabel='Y (mm)')
+    #         # fig.suptitle("Teste B - Image " + str(i))
+    #         # ax1.set_aspect('equal')
+    #         # ax2.set_aspect('equal')
+    #         # plt.show()
+    #
+    #         # Teste C - Segmento do contorno com falha (phantom) com peso 2 + segmento do contorno espelhado (m_phantom)
+    #         # Create dataset based on seg_phantom e seg_m_phantom
+    #         data_c = np.concatenate((seg_phantom[:, :], seg_phantom[:, :], seg_m_phantom[:, :]), axis=0)  # mudar
+    #         # Create polynomial based on data_c
+    #         z = np.polyfit(data_c[:, 0], data_c[:, 1], 4)  # polinomio
+    #         ptos = 0.2  # resolução em x
+    #         x = np.arange(seg_phantom[0, 0], seg_phantom[len(seg_phantom) - 1, 0], ptos)  # manter sempre
+    #         est = np.polyval(z, x)  # avaliação do polinomio em x
+    #         pred = np.vstack((x, est)).T  # organização do valor de cada ponto do polinômio (y) no respectivo x
+    #         # REMQ e Hausdorff
+    #         min_dist_list = []
+    #         for j in range(pred.shape[0]):
+    #             pred_p = pred[j]
+    #             min_dist = 100
+    #             for k in range(seg_gs.shape[0]):
+    #                 gs_p = seg_gs[k, 0:2]
+    #                 dist = np.sqrt((pred_p[0] - gs_p[0]) ** 2 + (pred_p[1] - gs_p[1]) ** 2)
+    #                 if dist <= min_dist:
+    #                     min_dist = dist
+    #             min_dist_list.append(min_dist)
+    #         h = np.amax(np.asarray(min_dist_list))
+    #         squared_dist_list = np.asarray(min_dist_list) ** 2
+    #         remq = calculate_remq(squared_dist_list)
+    #         remq_c.append(remq)  # atenção mudar
+    #         h_c.append(h)  # atenção mudar
+    #
+    #         # fig, (ax1, ax2) = plt.subplots(1, 2)
+    #         # ax2.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
+    #         # ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'ro', markersize=1)
+    #         # ax1.plot(seg_m_phantom[:, 0], seg_m_phantom[:, 1], 'go', markersize=1)
+    #         # ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'ro', markersize=1)
+    #         # ax1.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
+    #         # ax2.set(xlabel='X (mm)', ylabel='Y (mm)')
+    #         # ax1.set(xlabel='X (mm)', ylabel='Y (mm)')
+    #         # fig.suptitle("Teste C - Image " + str(i))
+    #         # ax1.set_aspect('equal')
+    #         # ax2.set_aspect('equal')
+    #         # plt.show()
+    #
+    #         # Teste D - Segmento do contorno com falha (phantom) + segmento do contorno espelhado (m_phantom) com peso 2
+    #         # Create dataset based on seg_phantom e seg_m_phantom
+    #         data_d = np.concatenate((seg_phantom[:, :], seg_m_phantom[:, :], seg_m_phantom[:, :]), axis=0)
+    #         # Create polynomial based on data_d
+    #         z = np.polyfit(data_d[:, 0], data_d[:, 1], 4)  # polinomio
+    #         ptos = 0.2  # resolução em x
+    #         x = np.arange(seg_phantom[0, 0], seg_phantom[len(seg_phantom) - 1, 0], ptos)
+    #         est = np.polyval(z, x)  # avaliação do polinomio em x
+    #         pred = np.vstack((x, est)).T  # organização do valor de cada ponto do polinômio (y) no respectivo x
+    #         # REMQ e Hausdorff
+    #         min_dist_list = []
+    #         for j in range(pred.shape[0]):
+    #             pred_p = pred[j]
+    #             min_dist = 100
+    #             for k in range(seg_gs.shape[0]):
+    #                 gs_p = seg_gs[k, 0:2]
+    #                 dist = np.sqrt((pred_p[0] - gs_p[0]) ** 2 + (pred_p[1] - gs_p[1]) ** 2)
+    #                 if dist <= min_dist:
+    #                     min_dist = dist
+    #             min_dist_list.append(min_dist)
+    #         h = np.amax(np.asarray(min_dist_list))
+    #         squared_dist_list = np.asarray(min_dist_list) ** 2
+    #         remq = calculate_remq(squared_dist_list)
+    #         remq_d.append(remq)
+    #         h_d.append(h)
+    #
+    #         # fig, (ax1, ax2) = plt.subplots(1, 2)
+    #         # ax2.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
+    #         # ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'ro', markersize=1)
+    #         # ax1.plot(seg_m_phantom[:, 0], seg_m_phantom[:, 1], 'go', markersize=1)
+    #         # ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'ro', markersize=1)
+    #         # ax1.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
+    #         # ax2.set(xlabel='X (mm)', ylabel='Y (mm)')
+    #         # ax1.set(xlabel='X (mm)', ylabel='Y (mm)')
+    #         # fig.suptitle("Teste D - Image " + str(i))
+    #         # ax1.set_aspect('equal')
+    #         # ax2.set_aspect('equal')
+    #         # plt.show()
+    #
+    # # Writes results to file
 
     f = open("resultsteste.txt", "a")
     f.write("Patient c and r: " + str(c) + " " + str(r) + "\n")
@@ -528,6 +536,7 @@ def tests(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, eval_indexes,
             + str(h_d_mean) + " ± " + str(h_d_desvpad) + "\n")
 
     f.close()
+    return result
 
 
 def axisequal3d(ax):
@@ -641,8 +650,25 @@ def main():
             print("Evaluation intervals set")
 
             print("Testing... P" + str(c[n]) + " Size " + str(r[k]))
-            tests(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, eval_indexes, c[n], r[k])
+            result = tests(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, eval_indexes, c[n], r[k])
             print("Tests done")
+
+            fig = plt.figure()
+            ax = Axes3D(fig)
+            for o in range(num_images):
+                contour = np.asarray(hemi_phantom[o])
+                ax.plot(contour[:, 0], contour[:, 1], o, 'bo', markersize=1, alpha=0.5)
+                contour = result[o]
+                if contour is not None:
+                    ax.plot(contour[:, 0], contour[:, 1], o, 'go', markersize=1, alpha=0.5)
+                # contour = np.asarray(hemi_gold_standard[k])
+                # ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'mo', markersize=1, alpha=0.5)
+            ax.set_ylabel('Y (mm)')
+            ax.set_xlabel('X (mm)')
+            ax.set_zlabel('Z (mm)')
+            axisequal3d(ax)
+            ax.set_aspect('equal')
+            plt.show()
 
     # ref_point = ref_point_list[60]  # trocar n img
     # ref_vector = np.array([1, 0])
