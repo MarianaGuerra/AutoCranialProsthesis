@@ -9,7 +9,6 @@ from scipy.spatial import distance
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import copy
-from scipy.spatial.distance import directed_hausdorff
 
 
 # Mariana Guerra
@@ -391,12 +390,29 @@ def similarity(seg_gs, seg_phantom, data1, data2=None, data3=None):
         data = np.concatenate((data1[:, :], data2[:, :]), axis=0)
     else:
         data = data1
-    # Create polynomial based on data_b
-    z = np.polyfit(data[:, 0], data[:, 1], 4)  # polinomio
-    ptos = 0.2  # resolução em x
-    x = np.arange(seg_phantom[0, 0], seg_phantom[len(seg_phantom) - 1, 0], ptos) # manter para todos
+    # Create polynomial based on data
+    z = np.polyfit(data[:, 0], data[:, 1], 4)  # polinomio ordem 4
+    res = 0.2  # resolução em x
+
+    # Sort points with ascending x value
+    datap = seg_phantom[seg_phantom[:, 0].argsort()]
+
+    # Find the gap based on the greatest difference between x values in data
+    geatest_diff = 0
+    ini_gap = 0
+    end_gap = 0
+    for n in range(0, datap.shape[0] - 1):
+        diff = np.abs(datap[n + 1, 0] - datap[n, 0])
+        if diff > geatest_diff:
+            geatest_diff = diff
+            ini_gap = n
+            end_gap = n + 1
+    x = np.arange(seg_phantom[ini_gap, 0], seg_phantom[end_gap, 0], res)  # x do pol somente na falha
+    # x = np.arange(seg_phantom[0, 0], seg_phantom[len(seg_phantom) - 1, 0], res)  # x do pol igual de seg phantom
+
     est = np.polyval(z, x)  # avaliação do polinomio em x
     pred = np.vstack((x, est)).T  # organização do valor de cada ponto do polinômio (y) no respectivo x
+
     # REMQ e Hausdorff
     min_dist_list = []
     for j in range(pred.shape[0]):
@@ -472,8 +488,8 @@ def tests(seg_datasets, c, r):
 
         # Teste C - Segmento do contorno com falha (phantom) com peso 2 + segmento do contorno espelhado (m_phantom)
         pred, remq, h = similarity(seg_gs, seg_phantom, seg_phantom, seg_phantom, seg_m_phantom)
-        remq_c.append(remq)  # atenção mudar
-        h_c.append(h)  # atenção mudar
+        remq_c.append(remq)
+        h_c.append(h)
 
         # fig, (ax1, ax2) = plt.subplots(1, 2)
         # ax2.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
@@ -508,7 +524,7 @@ def tests(seg_datasets, c, r):
 
     # Writes results to file
 
-    f = open("resultadosParciaisTeste.txt", "a")
+    f = open("resultadosParciaisTesteP1P2SoFalha.txt", "a")
     f.write("Patient c and r: " + str(c) + " " + str(r) + "\n")
     f.write("Number of images with gap: " + str(num_images) + "\n")
 
