@@ -44,7 +44,48 @@ def select_contours(img):
     return contours_wanted, pixel_mean_array
 
 
-def create_phantom(contours_list, center, radius, converter):
+def create_phantom_ellipsoid(contours_list, center, size, converter):
+    """
+    Creates phanton deleting points whithin the volume of an ellipsoid
+    :param contours_list: list with patient bone contours
+    :param center: chosen point to be the ellipsoid center
+    :param size: ellipsoid parameters
+    :param converter: instance of PatientSpaceConversion
+    :return: list with patient bone contours with gap determined by ellipsoid's dimentions
+    """
+    gap_contours_list = [None] * len(contours_list)
+    (center_ps_x, center_ps_y, center_ps_z) = converter.convert(center[0], center[1], center[2])  # ps = patient space
+
+    # ellipsoid parameters
+    if size == 1:
+        a = 18
+        b = 24
+        c = 12
+    elif size == 2:
+        a = 27
+        b = 36
+        c = 18
+    else:
+        a = 36
+        b = 48
+        c = 24
+
+    for j in range(len(contours_list)):
+        contour = contours_list[j][1]  # external contour
+        gap_contour = []
+        for i in range(contour.shape[0]):
+            p = contour[i]
+            (p_ps_x, p_ps_y, p_ps_z) = converter.convert(p[0], p[1], j)
+            p_ps = (p_ps_x, p_ps_y, p_ps_z)
+            d = ((center_ps_x - p_ps_x)**2 / a**2) + ((center_ps_y - p_ps_y)**2 / b**2) +\
+                ((center_ps_z - p_ps_z)**2 / c**2)
+            if d >= 1:  # (x-xo)^2/a + (y-yo)^2/b +(z-zo)^2/c > 1 point xo,yo,zo outside ellipsoid
+                gap_contour.append(p_ps)
+        gap_contours_list[j] = gap_contour
+    return gap_contours_list
+
+
+def create_phantom_sphere(contours_list, center, radius, converter):
     """
     Creates phanton deleting points whithin the volume of a sphere
     :param contours_list: list with patient bone contours
@@ -571,17 +612,13 @@ def axisequal3d(ax):
 
 def main():
     # Dataset reading and contours
-    # [r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P1",
-    #              r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P2",
     paths = [r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P1",
              r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P2",
-             r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P3",
-             r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P4",
-             r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P5"]
+             r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P3reorg",
+             r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P4reorg",
+             r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P5reorg"]
     for n in range(len(paths)):
         datasets = load_dicom_folder(paths[n])
-        # por if aqui depois pra n de 3 a 5
-        # datasets = np.flip(datasets, 0)
         series_arr, converter = dicom_datasets_to_numpy(datasets)
         num_images = series_arr.shape[2]
         contours_list = [None] * num_images  # list of all contours of all images
@@ -619,60 +656,61 @@ def main():
         # plt.show()
 
         # Create phantom
-        # c = [[218, 404, 30], [283, 380, 60], [], [0,0,0], [0,0,0]]  # p1, p2, p3, p4, p5
-        c = [[218, 404, 30], [283, 380, 60]]  # p1, p2
-        r = [10, 20, 30]  # p, m, g
+        c = [[268, 404, 30], [233, 380, 60], [293, 172, 15], [293, 172, 15], [293, 172, 15]]  # p1, p2, p3, p4, p5
+        # r = [10, 20, 30]  # p, m, g
+        size = [1, 2, 3]  # p, m, g
 
-        for k in range(len(r)):
-            phantom = create_phantom(contours_list, c[n], r[k], converter)
+        for k in range(len(size)):
+            # phantom = create_phantom_sphere(contours_list, c[n], r[k], converter)
+            phantom = create_phantom_ellipsoid(contours_list, c[n], size[k], converter)
             phantom = np.asarray(phantom)
             print("Phantom done")
 
             # Phantom plot
-            # fig2 = plt.figure()
-            # ax = Axes3D(fig2)
-            # for m in range(num_images):
-            #     contour = np.asarray(phantom[m])
-            #     ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'bo', markersize=1, alpha=0.5)
-            # ax.set_ylabel('Y (mm)')
-            # ax.set_xlabel('X (mm)')
-            # ax.set_zlabel('Z (mm)')
-            # axisequal3d(ax)
-            # ax.set_aspect('equal')
-            # plt.show()
+            fig2 = plt.figure()
+            ax = Axes3D(fig2)
+            for m in range(num_images):
+                contour = np.asarray(phantom[m])
+                ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'bo', markersize=1, alpha=0.5)
+            ax.set_ylabel('Y (mm)')
+            ax.set_xlabel('X (mm)')
+            ax.set_zlabel('Z (mm)')
+            axisequal3d(ax)
+            ax.set_aspect('equal')
+            plt.show()
 
-            mirrored_phantom, ref_point_list = mirror_contours(phantom)
-            print("Mirrored Phantom done")
-
-            hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom = find_hemisphere(contours_list,
-                                                                                      phantom, mirrored_phantom,
-                                                                                      ref_point_list, converter)
-            print("Hemi datasets done")
-
-            # fig = plt.figure()
-            # ax = Axes3D(fig)
-            # for o in range(num_images):
-            #     contour = np.asarray(hemi_phantom[o])
-            #     ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'bo', markersize=1, alpha=0.5)
-            #     contour = np.asarray(hemi_mirrored_phantom[o])
-            #     ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'go', markersize=1, alpha=0.5)
-            #     # contour = np.asarray(hemi_gold_standard[k])
-            #     # ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'mo', markersize=1, alpha=0.5)
-            # ax.set_ylabel('Y (mm)')
-            # ax.set_xlabel('X (mm)')
-            # ax.set_zlabel('Z (mm)')
-            # axisequal3d(ax)
-            # ax.set_aspect('equal')
-            # plt.show()
-
-            eval_indexes = find_eval_region(hemi_phantom)
-            print("Evaluation intervals set")
-
-            seg_datasets = cut_seg_datasets(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, eval_indexes)
-
-            print("Testing... P" + str(c[n]) + " Size " + str(r[k]))
-            result = tests(seg_datasets, c[n], r[k])
-            print("Tests done")
+            # mirrored_phantom, ref_point_list = mirror_contours(phantom)
+            # print("Mirrored Phantom done")
+            #
+            # hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom = find_hemisphere(contours_list,
+            #                                                                           phantom, mirrored_phantom,
+            #                                                                           ref_point_list, converter)
+            # print("Hemi datasets done")
+            #
+            # # fig = plt.figure()
+            # # ax = Axes3D(fig)
+            # # for o in range(num_images):
+            # #     contour = np.asarray(hemi_phantom[o])
+            # #     ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'bo', markersize=1, alpha=0.5)
+            # #     contour = np.asarray(hemi_mirrored_phantom[o])
+            # #     ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'go', markersize=1, alpha=0.5)
+            # #     # contour = np.asarray(hemi_gold_standard[k])
+            # #     # ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'mo', markersize=1, alpha=0.5)
+            # # ax.set_ylabel('Y (mm)')
+            # # ax.set_xlabel('X (mm)')
+            # # ax.set_zlabel('Z (mm)')
+            # # axisequal3d(ax)
+            # # ax.set_aspect('equal')
+            # # plt.show()
+            #
+            # eval_indexes = find_eval_region(hemi_phantom)
+            # print("Evaluation intervals set")
+            #
+            # seg_datasets = cut_seg_datasets(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, eval_indexes)
+            #
+            # print("Testing... P" + str(c[n]) + " Size " + str(r[k]))
+            # result = tests(seg_datasets, c[n], r[k])
+            # print("Tests done")
 
             # fig = plt.figure()
             # ax = Axes3D(fig)
