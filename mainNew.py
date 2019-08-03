@@ -135,6 +135,48 @@ def mirror_contours(phantom):
             point[1] = - point[1] + 2 * ref_point[1]
         mirrored_phantom[j] = contour
         ref_point_list[j] = ref_point
+
+    # fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    #
+    # a = 10
+    # ref_point = ref_point_list[a]  # trocar n img
+    # ref_vector = np.array([1, 0])
+    # p = np.asarray(phantom[a])  # trocar n img
+    # ax1.plot(p[:, 0], p[:, 1], 'bo', markersize=1, alpha=0.5)
+    # ax1.plot(mirrored_phantom[a][:, 0], mirrored_phantom[a][:, 1], 'go', markersize=1)  # trocar n img
+    # far_point = ref_point + 100 * ref_vector
+    # mid_point = ref_point - 100 * ref_vector
+    # ax1.plot([mid_point[0], far_point[0]], [mid_point[1], far_point[1]], 'r--')
+    # ax1.plot(ref_point[0], ref_point[1], 'mx', markersize=10)
+    # b = 20
+    # ref_point = ref_point_list[b]  # trocar n img
+    # ref_vector = np.array([1, 0])
+    # p = np.asarray(phantom[b])  # trocar n img
+    # ax2.plot(p[:, 0], p[:, 1], 'bo', markersize=1, alpha=0.5)
+    # ax2.plot(mirrored_phantom[b][:, 0], mirrored_phantom[b][:, 1], 'go', markersize=1)  # trocar n img
+    # far_point = ref_point + 100 * ref_vector
+    # mid_point = ref_point - 100 * ref_vector
+    # ax2.plot([mid_point[0], far_point[0]], [mid_point[1], far_point[1]], 'r--')
+    # ax2.plot(ref_point[0], ref_point[1], 'mx', markersize=10)
+    # c = 30
+    # ref_point = ref_point_list[c]  # trocar n img
+    # ref_vector = np.array([1, 0])
+    # p = np.asarray(phantom[c])  # trocar n img
+    # ax3.plot(p[:, 0], p[:, 1], 'bo', markersize=1, alpha=0.5)
+    # ax3.plot(mirrored_phantom[c][:, 0], mirrored_phantom[c][:, 1], 'go', markersize=1)  # trocar n img
+    # far_point = ref_point + 100 * ref_vector
+    # mid_point = ref_point - 100 * ref_vector
+    # ax3.plot([mid_point[0], far_point[0]], [mid_point[1], far_point[1]], 'r--')
+    # ax3.plot(ref_point[0], ref_point[1], 'mx', markersize=10)
+    #
+    # ax2.set(xlabel='X (mm)', ylabel='Y (mm)')
+    # ax1.set(xlabel='X (mm)', ylabel='Y (mm)')
+    # ax3.set(xlabel='X (mm)', ylabel='Y (mm)')
+    # ax1.set_aspect('equal')
+    # ax2.set_aspect('equal')
+    # ax3.set_aspect('equal')
+    # plt.show()
+
     return mirrored_phantom, ref_point_list
 
 
@@ -152,10 +194,10 @@ def find_hemisphere(contours_list, phantom, mirrored_phantom, ref_point_list, co
     hemi_gold_standard = [None] * num_images
     hemi_phantom = [None] * num_images
     hemi_mirrored_phantom = [None] * num_images
+    underaxis = 0
+    aboveaxis = 0
 
     # Finds out if the majority of contours in phantom have more points above or under the ref axis
-    aboveaxis = 0
-    underaxis = 0
     for i in range(num_images):
         ref_point = ref_point_list[i]
         c_gap = np.asarray(phantom[i])
@@ -167,9 +209,13 @@ def find_hemisphere(contours_list, phantom, mirrored_phantom, ref_point_list, co
                 c_gap_underaxis += 1
             else:
                 c_gap_aboveaxis += 1
-
+        if c_gap_underaxis > c_gap_aboveaxis:
+            underaxis += 1
+        else:
+            aboveaxis += 1
+    # Halves the contour based on the previous finding
     if underaxis < aboveaxis:
-        for j in range(len(contours_list)):
+        for j in range(num_images):
             # Data
             ref_point = ref_point_list[j]
             c = contours_list[j][1]
@@ -474,7 +520,7 @@ def similarity(seg_gs, seg_phantom, data1, data2=None, data3=None):
 def tests(seg_datasets, c, r):
 
     num_images = len(seg_datasets)
-    result = [None] * num_images
+    # result = [None] * num_images
     remq_a = []
     remq_b = []
     remq_c = []
@@ -496,11 +542,11 @@ def tests(seg_datasets, c, r):
         h_a.append(h)
 
         # fig, (ax1, ax2) = plt.subplots(1, 2)
-        # ax2.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
-        # ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'ro', markersize=1)
+        # ax2.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
+        # ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'bo', markersize=1)
         # ax1.plot(seg_m_phantom[:, 0], seg_m_phantom[:, 1], 'go', markersize=1)
-        # ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'ro', markersize=1)
-        # ax1.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
+        # ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'bo', markersize=1)
+        # ax1.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
         # ax2.set(xlabel='X (mm)', ylabel='Y (mm)')
         # ax1.set(xlabel='X (mm)', ylabel='Y (mm)')
         # fig.suptitle("Teste A - Image " + str(i))
@@ -515,11 +561,11 @@ def tests(seg_datasets, c, r):
         h_b.append(h)
 
         # fig, (ax1, ax2) = plt.subplots(1, 2)
-        # ax2.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
-        # ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'ro', markersize=1)
+        # ax2.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
+        # ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'bo', markersize=1)
         # ax1.plot(seg_m_phantom[:, 0], seg_m_phantom[:, 1], 'go', markersize=1)
-        # ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'ro', markersize=1)
-        # ax1.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
+        # ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'bo', markersize=1)
+        # ax1.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
         # ax2.set(xlabel='X (mm)', ylabel='Y (mm)')
         # ax1.set(xlabel='X (mm)', ylabel='Y (mm)')
         # fig.suptitle("Teste B - Image " + str(i))
@@ -533,11 +579,11 @@ def tests(seg_datasets, c, r):
         h_c.append(h)
 
         # fig, (ax1, ax2) = plt.subplots(1, 2)
-        # ax2.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
-        # ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'ro', markersize=1)
+        # ax2.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
+        # ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'bo', markersize=1)
         # ax1.plot(seg_m_phantom[:, 0], seg_m_phantom[:, 1], 'go', markersize=1)
-        # ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'ro', markersize=1)
-        # ax1.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
+        # ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'bo', markersize=1)
+        # ax1.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
         # ax2.set(xlabel='X (mm)', ylabel='Y (mm)')
         # ax1.set(xlabel='X (mm)', ylabel='Y (mm)')
         # fig.suptitle("Teste C - Image " + str(i))
@@ -551,11 +597,11 @@ def tests(seg_datasets, c, r):
         h_d.append(h)
 
         # fig, (ax1, ax2) = plt.subplots(1, 2)
-        # ax2.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
-        # ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'ro', markersize=1)
+        # ax2.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
+        # ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'bo', markersize=1)
         # ax1.plot(seg_m_phantom[:, 0], seg_m_phantom[:, 1], 'go', markersize=1)
-        # ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'ro', markersize=1)
-        # ax1.plot(pred[:, 0], pred[:, 1], 'bo', markersize=1, alpha=0.5)
+        # ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'bo', markersize=1)
+        # ax1.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
         # ax2.set(xlabel='X (mm)', ylabel='Y (mm)')
         # ax1.set(xlabel='X (mm)', ylabel='Y (mm)')
         # fig.suptitle("Teste D - Image " + str(i))
@@ -565,8 +611,8 @@ def tests(seg_datasets, c, r):
 
     # Writes results to file
 
-    f = open("resultadosParciaisTesteP1P2SoFalha.txt", "a")
-    f.write("Patient c and r: " + str(c) + " " + str(r) + "\n")
+    f = open("resultadosP1aP5Elipse.txt", "a")
+    f.write("Patient c and size: " + str(c) + " " + str(r) + "\n")
     f.write("Number of images with gap: " + str(num_images) + "\n")
 
     remq_a_mean = round(np.mean(np.asarray(remq_a)), 3)
@@ -596,7 +642,7 @@ def tests(seg_datasets, c, r):
             + str(h_d_mean) + " ± " + str(h_d_desvpad) + "\n")
 
     f.close()
-    return result
+    return
 
 
 def axisequal3d(ax):
@@ -656,7 +702,11 @@ def main():
         # plt.show()
 
         # Create phantom
-        c = [[268, 404, 30], [233, 380, 60], [293, 172, 15], [293, 172, 15], [293, 172, 15]]  # p1, p2, p3, p4, p5
+        c = [[268, 404, 30],  # p1
+             [233, 380, 60],  # p2
+             [293, 172, 15],  # p3
+             [293, 172, 15],  # p4
+             [293, 172, 15]]  # p5
         # r = [10, 20, 30]  # p, m, g
         size = [1, 2, 3]  # p, m, g
 
@@ -667,11 +717,35 @@ def main():
             print("Phantom done")
 
             # Phantom plot
-            fig2 = plt.figure()
-            ax = Axes3D(fig2)
-            for m in range(num_images):
-                contour = np.asarray(phantom[m])
+            # fig2 = plt.figure()
+            # ax = Axes3D(fig2)
+            # for m in range(num_images):
+            #     contour = np.asarray(phantom[m])
+            #     ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'bo', markersize=1, alpha=0.5)
+            # ax.set_ylabel('Y (mm)')
+            # ax.set_xlabel('X (mm)')
+            # ax.set_zlabel('Z (mm)')
+            # axisequal3d(ax)
+            # ax.set_aspect('equal')
+            # plt.show()
+
+            mirrored_phantom, ref_point_list = mirror_contours(phantom)
+            print("Mirrored Phantom done")
+
+            hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom = find_hemisphere(contours_list,
+                                                                                      phantom, mirrored_phantom,
+                                                                                      ref_point_list, converter)
+            print("Hemi datasets done")
+
+            fig = plt.figure()
+            ax = Axes3D(fig)
+            for o in range(num_images):
+                contour = np.asarray(hemi_phantom[o])
                 ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'bo', markersize=1, alpha=0.5)
+                contour = np.asarray(hemi_mirrored_phantom[o])
+                ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'go', markersize=1, alpha=0.5)
+                # contour = np.asarray(hemi_gold_standard[k])
+                # ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'mo', markersize=1, alpha=0.5)
             ax.set_ylabel('Y (mm)')
             ax.set_xlabel('X (mm)')
             ax.set_zlabel('Z (mm)')
@@ -679,39 +753,15 @@ def main():
             ax.set_aspect('equal')
             plt.show()
 
-            # mirrored_phantom, ref_point_list = mirror_contours(phantom)
-            # print("Mirrored Phantom done")
-            #
-            # hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom = find_hemisphere(contours_list,
-            #                                                                           phantom, mirrored_phantom,
-            #                                                                           ref_point_list, converter)
-            # print("Hemi datasets done")
-            #
-            # # fig = plt.figure()
-            # # ax = Axes3D(fig)
-            # # for o in range(num_images):
-            # #     contour = np.asarray(hemi_phantom[o])
-            # #     ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'bo', markersize=1, alpha=0.5)
-            # #     contour = np.asarray(hemi_mirrored_phantom[o])
-            # #     ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'go', markersize=1, alpha=0.5)
-            # #     # contour = np.asarray(hemi_gold_standard[k])
-            # #     # ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'mo', markersize=1, alpha=0.5)
-            # # ax.set_ylabel('Y (mm)')
-            # # ax.set_xlabel('X (mm)')
-            # # ax.set_zlabel('Z (mm)')
-            # # axisequal3d(ax)
-            # # ax.set_aspect('equal')
-            # # plt.show()
-            #
-            # eval_indexes = find_eval_region(hemi_phantom)
-            # print("Evaluation intervals set")
-            #
-            # seg_datasets = cut_seg_datasets(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, eval_indexes)
-            #
-            # print("Testing... P" + str(c[n]) + " Size " + str(r[k]))
-            # result = tests(seg_datasets, c[n], r[k])
-            # print("Tests done")
+            eval_indexes = find_eval_region(hemi_phantom)
+            print("Evaluation intervals set")
 
+            seg_datasets = cut_seg_datasets(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, eval_indexes)
+
+            print("Testing... P" + str(c[n]) + " Size " + str(size[k]))
+            tests(seg_datasets, c[n], size[k])
+            print("Tests done")
+            #
             # fig = plt.figure()
             # ax = Axes3D(fig)
             # for o in range(num_images):
@@ -729,19 +779,6 @@ def main():
             # ax.set_aspect('equal')
             # ax.set_title("P" + str(c[n]) + " Size " + str(r[k]))
             # plt.show()
-
-    # ref_point = ref_point_list[60]  # trocar n img
-    # ref_vector = np.array([1, 0])
-    # p = np.asarray(phantom[60])  # trocar n img
-    # plt.plot(p[:, 0], p[:, 1], 'mo', markersize=1)
-    # plt.plot(mirrored_phantom[60][:, 0], mirrored_phantom[60][:, 1], 'bo', markersize=1)  # trocar n img
-    # far_point = ref_point + 100 * ref_vector
-    # mid_point = ref_point - 100 * ref_vector
-    # plt.plot([mid_point[0], far_point[0]], [mid_point[1], far_point[1]], 'r--')
-    # plt.plot(ref_point[0], ref_point[1], 'gx', markersize=10)
-    # plt.xlabel('X (mm)')
-    # plt.ylabel('Y (mm)')
-    # plt.show()
 
 
 if __name__ == '__main__':
