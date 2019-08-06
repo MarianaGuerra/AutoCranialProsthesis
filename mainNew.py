@@ -57,15 +57,15 @@ def create_phantom_ellipsoid(contours_list, center, size, converter):
     (center_ps_x, center_ps_y, center_ps_z) = converter.convert(center[0], center[1], center[2])  # ps = patient space
 
     # ellipsoid parameters
-    if size == 1:
+    if size == "P":
         a = 18
         b = 24
         c = 12
-    elif size == 2:
+    elif size == "M":
         a = 27
         b = 36
         c = 18
-    else:
+    elif size == "G":
         a = 36
         b = 48
         c = 24
@@ -110,25 +110,30 @@ def create_phantom_sphere(contours_list, center, radius, converter):
     return gap_contours_list
 
 
-def mirror_contours(phantom):
+def mirror_contours(phantom, contours_list, converter):
     """
     Mirrors contours with respect to a reference axis (reference point, horizontal vector)
     :param phantom: list with patient bone contours with gap determined by the create_phantom function
-    :return: list with patient bone contours with gap mirrored, list of the reference points used for each contour
+    :param contours_list: list with patient bone contours
+    :param converter: instance of PatientSpaceConversion
+    :return: list with patient mirrored bone contours, list of the reference points used for each contour
     """
     mirrored_phantom = copy.deepcopy(phantom)
     ref_point_list = [None] * mirrored_phantom.shape[0]
     for j in range(mirrored_phantom.shape[0]):
-        contour = np.asarray(mirrored_phantom[j])
-        # Find x and y min and max values to calculate reference point
-        xmin = np.amin(contour[:, 0])
-        xmax = np.amax(contour[:, 0])
+        contour = np.asarray(mirrored_phantom[j])  # mirrored_phantom is just like phantom until the last loop
+        c = contours_list[j][1]
+        # Find x and y min and max values in the gold standard (contours_list) to calculate reference point
+        xmin = np.amin(c[:, 0])
+        xmax = np.amax(c[:, 0])
         x_mean_axis = (xmin + xmax) / 2
-        ymin = np.amin(contour[:, 1])
-        ymax = np.amax(contour[:, 1])
+        ymin = np.amin(c[:, 1])
+        ymax = np.amax(c[:, 1])
         y_mean_axis = (ymin + ymax) / 2
         # Calculate reference point
-        ref_point = np.asarray([x_mean_axis, y_mean_axis])
+        ref_point_c = np.asarray([x_mean_axis, y_mean_axis])  # it is not in patient space, phantom already is
+        ref_point = [0, 0]
+        (ref_point[0], ref_point[1], p_ps_z) = converter.convert(ref_point_c[0], ref_point_c[1], j)
         # Create the mirrored gap contour with respect to the x axis and then translate it 2*y of ref_point
         for m in range(0, contour.shape[0]):
             point = contour[m]
@@ -138,7 +143,7 @@ def mirror_contours(phantom):
 
     # fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
     #
-    # a = 10
+    # a = 15
     # ref_point = ref_point_list[a]  # trocar n img
     # ref_vector = np.array([1, 0])
     # p = np.asarray(phantom[a])  # trocar n img
@@ -158,7 +163,7 @@ def mirror_contours(phantom):
     # mid_point = ref_point - 100 * ref_vector
     # ax2.plot([mid_point[0], far_point[0]], [mid_point[1], far_point[1]], 'r--')
     # ax2.plot(ref_point[0], ref_point[1], 'mx', markersize=10)
-    # c = 30
+    # c = 27
     # ref_point = ref_point_list[c]  # trocar n img
     # ref_vector = np.array([1, 0])
     # p = np.asarray(phantom[c])  # trocar n img
@@ -180,7 +185,7 @@ def mirror_contours(phantom):
     return mirrored_phantom, ref_point_list
 
 
-def find_hemisphere(contours_list, phantom, mirrored_phantom, ref_point_list, converter):
+def find_hemisphere(contours_list, phantom, mirrored_phantom, ref_point_list, converter, side):
     """
     Finds the hemisphere of interest (the one with the gap)
     :param contours_list: list with patient bone contours
@@ -194,27 +199,29 @@ def find_hemisphere(contours_list, phantom, mirrored_phantom, ref_point_list, co
     hemi_gold_standard = [None] * num_images
     hemi_phantom = [None] * num_images
     hemi_mirrored_phantom = [None] * num_images
-    underaxis = 0
-    aboveaxis = 0
+    # contour_has_more_points_underaxis = 0
+    # contour_has_more_points_aboveaxis = 0
 
     # Finds out if the majority of contours in phantom have more points above or under the ref axis
-    for i in range(num_images):
-        ref_point = ref_point_list[i]
-        c_gap = np.asarray(phantom[i])
-        c_gap_aboveaxis = 0
-        c_gap_underaxis = 0
-        for n in range(0, c_gap.shape[0]):
-            point = c_gap[n]
-            if point[1] < ref_point[1]:
-                c_gap_underaxis += 1
-            else:
-                c_gap_aboveaxis += 1
-        if c_gap_underaxis > c_gap_aboveaxis:
-            underaxis += 1
-        else:
-            aboveaxis += 1
-    # Halves the contour based on the previous finding
-    if underaxis < aboveaxis:
+    # for i in range(num_images):
+    #     ref_point = ref_point_list[i]
+    #     c_gap = np.asarray(phantom[i])
+    #     point_aboveaxis = 0
+    #     point_underaxis = 0
+    #     for n in range(0, c_gap.shape[0]):
+    #         point = c_gap[n]
+    #         if point[1] < ref_point[1]:
+    #             point_underaxis += 1
+    #         else:
+    #             point_aboveaxis += 1
+    #     if point_underaxis > point_aboveaxis:
+    #         contour_has_more_points_underaxis += 1
+    #     else:
+    #         contour_has_more_points_aboveaxis += 1
+    # print ("Underaxis: " + str(contour_has_more_points_underaxis) +
+    #        "  Aboveaxis: " + str(contour_has_more_points_aboveaxis))
+    # Selects the hemisphere of the contour based on the previous finding
+    if side == "underaxis":
         for j in range(num_images):
             # Data
             ref_point = ref_point_list[j]
@@ -245,8 +252,8 @@ def find_hemisphere(contours_list, phantom, mirrored_phantom, ref_point_list, co
             hemi_gold_standard[j] = np.asarray(seg_c_gs)
             hemi_mirrored_phantom[j] = np.asarray(seg_c_mirror)
             hemi_phantom[j] = np.asarray(seg_c_gap)
-    else:
-        for j in range(len(contours_list)):
+    elif side == "aboveaxis":
+        for j in range(num_images):
             # Data
             ref_point = ref_point_list[j]
             c = contours_list[j][1]
@@ -364,7 +371,9 @@ def cut_seg_datasets(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, ev
 
     seg_datasets = []
     for i in range(num_images):
-        if eval_indexes[i][4] > 1:  # contours with this low difference does not have a gap // era 2 mm
+
+        if eval_indexes[i][4] > 2:  # contours with this low difference does not have a gap // era 2 mm
+            # print ("num img = " + str(i))
             seg_datasets.append(SegDatasets())
             count_num_gap_img += 1
 
@@ -391,6 +400,7 @@ def cut_seg_datasets(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, ev
             # plt.plot(phantom[:, 0], phantom[:, 1], 'bo', markersize=1)
             # plt.xlabel('X (mm)')
             # plt.ylabel('Y (mm)')
+            # plt.axis('equal')
             # plt.title(str(i))
             # plt.show()
 
@@ -410,6 +420,7 @@ def cut_seg_datasets(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, ev
             # plt.xlabel('X (mm)')
             # plt.ylabel('Y (mm)')
             # plt.title(str(i))
+            # plt.axis('equal')
             # plt.show()
 
             # Finds eval region on mirrored phantom by looking for the points with x coordinate within 1 mm to ini_eval
@@ -418,16 +429,17 @@ def cut_seg_datasets(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, ev
             seg_mirror_end = 0
             for n in range(0, m_phantom.shape[0]):
                 point = m_phantom[n]
-                if ini_eval_x - 0.5 <= point[0] >= ini_eval_x + 0.5:
+                if (ini_eval_x - 0.5) <= point[0] <= (ini_eval_x + 0.5):
                     seg_mirror_ini = n
-                if end_eval_x - 0.5 <= point[0] >= end_eval_x + 0.5:
+                if (end_eval_x - 0.5) <= point[0] <= (end_eval_x + 0.5):
                     seg_mirror_end = n
             # plt.plot(m_phantom[seg_mirror_ini, 0], m_phantom[seg_mirror_ini, 1], 'bx', markersize=10)
             # plt.plot(m_phantom[seg_mirror_end, 0], m_phantom[seg_mirror_end, 1], 'gx', markersize=10)
-            # plt.plot(m_phantom[:, 0], m_phantom[:, 1], 'bo', markersize=1)
+            # plt.plot(m_phantom[:, 0], m_phantom[:, 1], 'go', markersize=1)
             # plt.xlabel('X (mm)')
             # plt.ylabel('Y (mm)')
             # plt.title(str(i))
+            # plt.axis('equal')
             # plt.show()
 
             # plt.plot(m_phantom[seg_mirror_ini, 0], m_phantom[seg_mirror_ini, 1], 'bx', markersize=10)
@@ -451,11 +463,21 @@ def cut_seg_datasets(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, ev
             else:
                 seg_m_phantom = m_phantom[seg_mirror_end:seg_mirror_ini, :]
 
-            seg_datasets[count_num_gap_img -1].m_phantom = seg_m_phantom
+            if seg_phantom_end > seg_phantom_ini:
+                seg_phantom = phantom[seg_phantom_ini:seg_phantom_end, :]
+            else:
+                seg_phantom = phantom[seg_phantom_end:seg_phantom_ini, :]
 
-            seg_datasets[count_num_gap_img -1].phantom = phantom[seg_phantom_ini:seg_phantom_end, :]
+            if seg_gs_end > seg_gs_ini:
+                seg_gs = gs[seg_gs_ini:seg_gs_end, :]
+            else:
+                seg_gs = gs[seg_gs_end:seg_gs_ini, :]
 
-            seg_datasets[count_num_gap_img -1].gs = gs[seg_gs_ini:seg_gs_end, :]
+            seg_datasets[count_num_gap_img - 1].m_phantom = seg_m_phantom
+
+            seg_datasets[count_num_gap_img - 1].phantom = seg_phantom
+
+            seg_datasets[count_num_gap_img - 1].gs = seg_gs
 
             # plt.plot(phantom[seg_phantom_ini, 0], phantom[seg_phantom_ini, 1], 'bx', markersize=10)
             # plt.plot(phantom[seg_phantom_end, 0], phantom[seg_phantom_end, 1], 'gx', markersize=10)
@@ -494,7 +516,7 @@ def similarity(seg_gs, seg_phantom, data1, data2=None, data3=None):
             geatest_diff = diff
             ini_gap = n
             end_gap = n + 1
-    x = np.arange(seg_phantom[ini_gap, 0], seg_phantom[end_gap, 0], res)  # x do pol somente na falha
+    x = np.arange(datap[ini_gap, 0], datap[end_gap, 0], res)  # x do pol somente na falha
     # x = np.arange(seg_phantom[0, 0], seg_phantom[len(seg_phantom) - 1, 0], res)  # x do pol igual de seg phantom
 
     est = np.polyval(z, x)  # avaliação do polinomio em x
@@ -517,7 +539,7 @@ def similarity(seg_gs, seg_phantom, data1, data2=None, data3=None):
     return pred, remq, h
 
 
-def tests(seg_datasets, c, r):
+def tests(seg_datasets, r, n):
 
     num_images = len(seg_datasets)
     # result = [None] * num_images
@@ -537,6 +559,7 @@ def tests(seg_datasets, c, r):
 
         # Teste A - Segmento do contorno com falha (phantom)
         # Create polynomial based on seg_phantom
+        # print ("num img = " + str(i))
         pred, remq, h = similarity(seg_gs, seg_phantom, seg_phantom)
         remq_a.append(remq)
         h_a.append(h)
@@ -612,7 +635,7 @@ def tests(seg_datasets, c, r):
     # Writes results to file
 
     f = open("resultadosP1aP5Elipse.txt", "a")
-    f.write("Patient c and size: " + str(c) + " " + str(r) + "\n")
+    f.write("Patient and size: " + str(n+1) + " " + str(r) + "\n")
     f.write("Number of images with gap: " + str(num_images) + "\n")
 
     remq_a_mean = round(np.mean(np.asarray(remq_a)), 3)
@@ -663,6 +686,21 @@ def main():
              r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P3reorg",
              r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P4reorg",
              r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P5reorg"]
+
+    side = ["aboveaxis",
+            "aboveaxis",
+            "underaxis",
+            "underaxis",
+            "underaxis"]
+
+    c = [[268, 404, 30],  # p1
+         [233, 380, 60],  # p2
+         [293, 172, 15],  # p3
+         [293, 172, 15],  # p4
+         [293, 172, 15]]  # p5
+
+    size = ["P", "M", "G"]  # p, m, g
+
     for n in range(len(paths)):
         datasets = load_dicom_folder(paths[n])
         series_arr, converter = dicom_datasets_to_numpy(datasets)
@@ -702,16 +740,7 @@ def main():
         # plt.show()
 
         # Create phantom
-        c = [[268, 404, 30],  # p1
-             [233, 380, 60],  # p2
-             [293, 172, 15],  # p3
-             [293, 172, 15],  # p4
-             [293, 172, 15]]  # p5
-        # r = [10, 20, 30]  # p, m, g
-        size = [1, 2, 3]  # p, m, g
-
         for k in range(len(size)):
-            # phantom = create_phantom_sphere(contours_list, c[n], r[k], converter)
             phantom = create_phantom_ellipsoid(contours_list, c[n], size[k], converter)
             phantom = np.asarray(phantom)
             print("Phantom done")
@@ -729,37 +758,38 @@ def main():
             # ax.set_aspect('equal')
             # plt.show()
 
-            mirrored_phantom, ref_point_list = mirror_contours(phantom)
+            mirrored_phantom, ref_point_list = mirror_contours(phantom, contours_list, converter)
             print("Mirrored Phantom done")
 
             hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom = find_hemisphere(contours_list,
                                                                                       phantom, mirrored_phantom,
-                                                                                      ref_point_list, converter)
+                                                                                      ref_point_list, converter,
+                                                                                      side[n])
             print("Hemi datasets done")
 
-            fig = plt.figure()
-            ax = Axes3D(fig)
-            for o in range(num_images):
-                contour = np.asarray(hemi_phantom[o])
-                ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'bo', markersize=1, alpha=0.5)
-                contour = np.asarray(hemi_mirrored_phantom[o])
-                ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'go', markersize=1, alpha=0.5)
-                # contour = np.asarray(hemi_gold_standard[k])
-                # ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'mo', markersize=1, alpha=0.5)
-            ax.set_ylabel('Y (mm)')
-            ax.set_xlabel('X (mm)')
-            ax.set_zlabel('Z (mm)')
-            axisequal3d(ax)
-            ax.set_aspect('equal')
-            plt.show()
+            # fig = plt.figure()
+            # ax = Axes3D(fig)
+            # for o in range(num_images):
+            #     contour = np.asarray(hemi_phantom[o])
+            #     ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'bo', markersize=1, alpha=0.5)
+            #     contour = np.asarray(hemi_mirrored_phantom[o])
+            #     ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'go', markersize=1, alpha=0.5)
+            #     # contour = np.asarray(hemi_gold_standard[k])
+            #     # ax.plot(contour[:, 0], contour[:, 1], contour[:, 2], 'mo', markersize=1, alpha=0.5)
+            # ax.set_ylabel('Y (mm)')
+            # ax.set_xlabel('X (mm)')
+            # ax.set_zlabel('Z (mm)')
+            # axisequal3d(ax)
+            # ax.set_aspect('equal')
+            # plt.show()
 
             eval_indexes = find_eval_region(hemi_phantom)
             print("Evaluation intervals set")
 
             seg_datasets = cut_seg_datasets(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, eval_indexes)
 
-            print("Testing... P" + str(c[n]) + " Size " + str(size[k]))
-            tests(seg_datasets, c[n], size[k])
+            print("Testing... P" + str(n+1) + " Size " + str(size[k]))
+            tests(seg_datasets, size[k], n)
             print("Tests done")
             #
             # fig = plt.figure()
