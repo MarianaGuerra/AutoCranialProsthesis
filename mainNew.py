@@ -561,110 +561,134 @@ def tests(seg_datasets, r, n):
         # Create polynomial based on seg_phantom
         # print ("num img = " + str(i))
         pred, remq, h = similarity(seg_gs, seg_phantom, seg_phantom)
-        remq_a.append(remq)
-        h_a.append(h)
+        # remq_a.append(remq)
+        # h_a.append(h)
+        f = open("REMQ-TesteA.txt", "a")
+        f.write(str(remq) + "\n")
+        g = open("H-TesteA.txt", "a")
+        g.write(str(h) + "\n")
+        f.close()
+        g.close()
 
-        fig, (ax1, ax2) = plt.subplots(1, 2)
-        ax2.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
-        ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'bo', markersize=1)
-        ax1.plot(seg_m_phantom[:, 0], seg_m_phantom[:, 1], 'go', markersize=1)
-        ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'bo', markersize=1)
-        ax1.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
-        ax2.set(xlabel='X (mm)', ylabel='Y (mm)')
-        ax1.set(xlabel='X (mm)', ylabel='Y (mm)')
-        fig.suptitle("Teste A - Image " + str(i))
-        ax1.set_aspect('equal')
-        ax2.set_aspect('equal')
-        plt.show()
+        # fig, (ax1, ax2) = plt.subplots(1, 2)
+        # ax2.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
+        # ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'bo', markersize=1)
+        # ax1.plot(seg_m_phantom[:, 0], seg_m_phantom[:, 1], 'go', markersize=1)
+        # ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'bo', markersize=1)
+        # ax1.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
+        # ax2.set(xlabel='X (mm)', ylabel='Y (mm)')
+        # ax1.set(xlabel='X (mm)', ylabel='Y (mm)')
+        # fig.suptitle("Teste A - Image " + str(i))
+        # ax1.set_aspect('equal')
+        # ax2.set_aspect('equal')
+        # plt.show()
 
         # Teste B - Segmento do contorno com falha (phantom) + segmento do contorno espelhado (m_phantom)
         # Create dataset based on seg_phantom e seg_m_phantom
         pred, remq, h = similarity(seg_gs, seg_phantom, seg_phantom, seg_m_phantom)
-        remq_b.append(remq)
-        h_b.append(h)
+        # remq_b.append(remq)
+        # h_b.append(h)
+        f = open("REMQ-TesteB.txt", "a")
+        f.write(str(remq) + "\n")
+        g = open("H-TesteB.txt", "a")
+        g.write(str(h) + "\n")
+        f.close()
+        g.close()
 
-        fig, (ax1, ax2) = plt.subplots(1, 2)
-        ax2.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
-        ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'bo', markersize=1)
-        ax1.plot(seg_m_phantom[:, 0], seg_m_phantom[:, 1], 'go', markersize=1)
-        ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'bo', markersize=1)
-        ax1.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
-        ax2.set(xlabel='X (mm)', ylabel='Y (mm)')
-        ax1.set(xlabel='X (mm)', ylabel='Y (mm)')
-        fig.suptitle("Teste B - Image " + str(i))
-        ax1.set_aspect('equal')
-        ax2.set_aspect('equal')
-        plt.show()
+        # fig, (ax1, ax2) = plt.subplots(1, 2)
+        # ax2.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
+        # ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'bo', markersize=1)
+        # ax1.plot(seg_m_phantom[:, 0], seg_m_phantom[:, 1], 'go', markersize=1)
+        # ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'bo', markersize=1)
+        # ax1.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
+        # ax2.set(xlabel='X (mm)', ylabel='Y (mm)')
+        # ax1.set(xlabel='X (mm)', ylabel='Y (mm)')
+        # fig.suptitle("Teste B - Image " + str(i))
+        # ax1.set_aspect('equal')
+        # ax2.set_aspect('equal')
+        # plt.show()
 
         # Teste C - Segmento do contorno com falha (phantom) com peso 2 + segmento do contorno espelhado (m_phantom)
         pred, remq, h = similarity(seg_gs, seg_phantom, seg_phantom, seg_phantom, seg_m_phantom)
-        remq_c.append(remq)
-        h_c.append(h)
+        # remq_c.append(remq)
+        # h_c.append(h)
+        f = open("REMQ-TesteC.txt", "a")
+        f.write(str(remq) + "\n")
+        g = open("H-TesteC.txt", "a")
+        g.write(str(h) + "\n")
+        f.close()
+        g.close()
 
-        fig, (ax1, ax2) = plt.subplots(1, 2)
-        ax2.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
-        ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'bo', markersize=1)
-        ax1.plot(seg_m_phantom[:, 0], seg_m_phantom[:, 1], 'go', markersize=1)
-        ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'bo', markersize=1)
-        ax1.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
-        ax2.set(xlabel='X (mm)', ylabel='Y (mm)')
-        ax1.set(xlabel='X (mm)', ylabel='Y (mm)')
-        fig.suptitle("Teste C - Image " + str(i))
-        ax1.set_aspect('equal')
-        ax2.set_aspect('equal')
-        plt.show()
+        # fig, (ax1, ax2) = plt.subplots(1, 2)
+        # ax2.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
+        # ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'bo', markersize=1)
+        # ax1.plot(seg_m_phantom[:, 0], seg_m_phantom[:, 1], 'go', markersize=1)
+        # ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'bo', markersize=1)
+        # ax1.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
+        # ax2.set(xlabel='X (mm)', ylabel='Y (mm)')
+        # ax1.set(xlabel='X (mm)', ylabel='Y (mm)')
+        # fig.suptitle("Teste C - Image " + str(i))
+        # ax1.set_aspect('equal')
+        # ax2.set_aspect('equal')
+        # plt.show()
 
         # Teste D - Segmento do contorno com falha (phantom) + segmento do contorno espelhado (m_phantom) com peso 2
         pred, remq, h = similarity(seg_gs, seg_phantom, seg_phantom, seg_m_phantom, seg_m_phantom)
-        remq_d.append(remq)
-        h_d.append(h)
+        # remq_d.append(remq)
+        # h_d.append(h)
+        f = open("REMQ-TesteD.txt", "a")
+        f.write(str(remq) + "\n")
+        f.close()
+        g = open("H-TesteD.txt", "a")
+        g.write(str(h) + "\n")
+        g.close()
 
-        fig, (ax1, ax2) = plt.subplots(1, 2)
-        ax2.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
-        ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'bo', markersize=1)
-        ax1.plot(seg_m_phantom[:, 0], seg_m_phantom[:, 1], 'go', markersize=1)
-        ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'bo', markersize=1)
-        ax1.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
-        ax2.set(xlabel='X (mm)', ylabel='Y (mm)')
-        ax1.set(xlabel='X (mm)', ylabel='Y (mm)')
-        fig.suptitle("Teste D - Image " + str(i))
-        ax1.set_aspect('equal')
-        ax2.set_aspect('equal')
-        plt.show()
+        # fig, (ax1, ax2) = plt.subplots(1, 2)
+        # ax2.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
+        # ax2.plot(seg_phantom[:, 0], seg_phantom[:, 1], 'bo', markersize=1)
+        # ax1.plot(seg_m_phantom[:, 0], seg_m_phantom[:, 1], 'go', markersize=1)
+        # ax1.plot(seg_gs[:, 0], seg_gs[:, 1], 'bo', markersize=1)
+        # ax1.plot(pred[:, 0], pred[:, 1], 'ro', markersize=1, alpha=0.5)
+        # ax2.set(xlabel='X (mm)', ylabel='Y (mm)')
+        # ax1.set(xlabel='X (mm)', ylabel='Y (mm)')
+        # fig.suptitle("Teste D - Image " + str(i))
+        # ax1.set_aspect('equal')
+        # ax2.set_aspect('equal')
+        # plt.show()
 
     # Writes results to file
 
-    f = open("resultadosP1aP5Elipse.txt", "a")
-    f.write("Patient " + str(n+1) + ", size " + str(r) + "\n")
-    f.write("Number of images with gap: " + str(num_images) + "\n")
-
-    remq_a_mean = round(np.mean(np.asarray(remq_a)), 3)
-    remq_a_desvpad = round(np.std(np.asarray(remq_a)), 3)
-    remq_b_mean = round(np.mean(np.asarray(remq_b)), 3)
-    remq_b_desvpad = round(np.std(np.asarray(remq_b)), 3)
-    remq_c_mean = round(np.mean(np.asarray(remq_c)),3)
-    remq_c_desvpad = round(np.std(np.asarray(remq_c)), 3)
-    remq_d_mean = round(np.mean(np.asarray(remq_d)), 3)
-    remq_d_desvpad = round(np.std(np.asarray(remq_d)), 3)
-
-    f.write(str(remq_a_mean) + " ± " + str(remq_a_desvpad) + "," + str(remq_b_mean) + " ± "
-            + str(remq_b_desvpad) + "," + str(remq_c_mean) + " ± " + str(remq_c_desvpad) + ","
-            + str(remq_d_mean) + " ± " + str(remq_d_desvpad) + "\n")
-
-    h_a_mean = round(np.mean(np.asarray(h_a)), 3)
-    h_a_desvpad = round(np.std(np.asarray(h_a)),3)
-    h_b_mean = round(np.mean(np.asarray(h_b)),3)
-    h_b_desvpad = round(np.std(np.asarray(h_b)), 3)
-    h_c_mean = round(np.mean(np.asarray(h_c)), 3)
-    h_c_desvpad = round(np.std(np.asarray(h_c)), 3)
-    h_d_mean = round(np.mean(np.asarray(h_d)), 3)
-    h_d_desvpad = round(np.std(np.asarray(h_d)), 3)
-
-    f.write(str(h_a_mean) + " ± " + str(h_a_desvpad) + "," + str(h_b_mean) + " ± "
-            + str(h_b_desvpad) + "," + str(h_c_mean) + " ± " + str(h_c_desvpad) + ","
-            + str(h_d_mean) + " ± " + str(h_d_desvpad) + "\n")
-
-    f.close()
+    # f = open("resultadosP1aP5Elipse.txt", "a")
+    # f.write("Patient " + str(n+1) + ", size " + str(r) + "\n")
+    # f.write("Number of images with gap: " + str(num_images) + "\n")
+    #
+    # remq_a_mean = round(np.mean(np.asarray(remq_a)), 3)
+    # remq_a_desvpad = round(np.std(np.asarray(remq_a)), 3)
+    # remq_b_mean = round(np.mean(np.asarray(remq_b)), 3)
+    # remq_b_desvpad = round(np.std(np.asarray(remq_b)), 3)
+    # remq_c_mean = round(np.mean(np.asarray(remq_c)),3)
+    # remq_c_desvpad = round(np.std(np.asarray(remq_c)), 3)
+    # remq_d_mean = round(np.mean(np.asarray(remq_d)), 3)
+    # remq_d_desvpad = round(np.std(np.asarray(remq_d)), 3)
+    #
+    # f.write(str(remq_a_mean) + " ± " + str(remq_a_desvpad) + "," + str(remq_b_mean) + " ± "
+    #         + str(remq_b_desvpad) + "," + str(remq_c_mean) + " ± " + str(remq_c_desvpad) + ","
+    #         + str(remq_d_mean) + " ± " + str(remq_d_desvpad) + "\n")
+    #
+    # h_a_mean = round(np.mean(np.asarray(h_a)), 3)
+    # h_a_desvpad = round(np.std(np.asarray(h_a)),3)
+    # h_b_mean = round(np.mean(np.asarray(h_b)),3)
+    # h_b_desvpad = round(np.std(np.asarray(h_b)), 3)
+    # h_c_mean = round(np.mean(np.asarray(h_c)), 3)
+    # h_c_desvpad = round(np.std(np.asarray(h_c)), 3)
+    # h_d_mean = round(np.mean(np.asarray(h_d)), 3)
+    # h_d_desvpad = round(np.std(np.asarray(h_d)), 3)
+    #
+    # f.write(str(h_a_mean) + " ± " + str(h_a_desvpad) + "," + str(h_b_mean) + " ± "
+    #         + str(h_b_desvpad) + "," + str(h_c_mean) + " ± " + str(h_c_desvpad) + ","
+    #         + str(h_d_mean) + " ± " + str(h_d_desvpad) + "\n")
+    #
+    # f.close()
     return
 
 
@@ -681,19 +705,19 @@ def axisequal3d(ax):
 
 def main():
     # Dataset reading and contours
-    paths = [#r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P1",
+    paths = [r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P1",
              r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P2",
              r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P3reorg",
              r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P4reorg",
              r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P5reorg"]
 
-    side = [#"aboveaxis",
+    side = ["aboveaxis",
             "aboveaxis",
             "underaxis",
             "underaxis",
             "underaxis"]
 
-    c = [#[268, 404, 30],  # p1
+    c = [[268, 404, 30],  # p1
          [233, 380, 60],  # p2
          [293, 172, 15],  # p3
          [293, 172, 15],  # p4
