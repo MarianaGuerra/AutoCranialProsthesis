@@ -6,6 +6,7 @@ import numpy as np
 from open import load_dicom_folder, dicom_datasets_to_numpy, PatientSpaceConversion
 from skimage import measure
 from scipy.spatial import distance
+import pickle
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import copy
@@ -705,25 +706,27 @@ def axisequal3d(ax):
 
 def main():
     # Dataset reading and contours
-    paths = [r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P1",
-             r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P2",
-             r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P3reorg",
-             r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P4reorg",
+    paths = [#r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P1",
+             #r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P2",
+             #r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P3reorg",
+             # r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P4reorg",
              r"C:\Users\Mariana\Dropbox\USP\Projeto Mariana\TestSeries\P5reorg"]
 
-    side = ["aboveaxis",
-            "aboveaxis",
-            "underaxis",
-            "underaxis",
+    side = [#"aboveaxis",
+            # "aboveaxis",
             "underaxis"]
+            # "underaxis",
+            # "underaxis"]
 
-    c = [[268, 404, 30],  # p1
-         [233, 380, 60],  # p2
-         [293, 172, 15],  # p3
-         [293, 172, 15],  # p4
+    c = [#[268, 404, 30],  # p1
+        # [233, 380, 60],  # p2
+          #[293, 172, 15],  # p3
+         #[293, 172, 15]  # p4
          [293, 172, 15]]  # p5
 
     size = ["P", "M", "G"]  # p, m, g
+
+    files = ["p5_p.bin", "p5_m.bin", "p5_g.bin"]
 
     for n in range(len(paths)):
         datasets = load_dicom_folder(paths[n])
@@ -812,9 +815,15 @@ def main():
 
             seg_datasets = cut_seg_datasets(hemi_gold_standard, hemi_phantom, hemi_mirrored_phantom, eval_indexes)
 
-            print("Testing... P" + str(n+1) + " Size " + str(size[k]))
-            tests(seg_datasets, size[k], n)
-            print("Tests done")
+            print("Saving... P" + str(n + 1) + " Size " + str(size[k]))
+
+            arq = open(files[k], "wb")
+
+            pickle.dump(seg_datasets, arq)
+
+            # print("Testing... P" + str(n+1) + " Size " + str(size[k]))
+            # tests(seg_datasets, size[k], n)
+            # print("Tests done")
             #
             # fig = plt.figure()
             # ax = Axes3D(fig)
